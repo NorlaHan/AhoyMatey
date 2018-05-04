@@ -10,13 +10,22 @@ public class Player : NetworkBehaviour {
 	public float vx , vz, vy, speed = 5f, jumpSpeed = 6f;
 	Rigidbody rigidBody;
 	Camera playerCamera;
-
+	AudioListener audioListener;
+	GameObject shipHolder;
 
 	// Use this for initialization
 	void Start () {
 		rigidBody = GetComponentInChildren<Rigidbody> ();
-		playerPos = transform.position;
-		playerRot = transform.eulerAngles;
+
+		playerCamera = GetComponentInChildren<Camera> ();
+		audioListener = GetComponentInChildren<AudioListener> ();
+//		shipHolder = gameObject.GetComponentInChildren
+
+//		playerCamera.enabled = false;
+//		audioListener.enabled = false;
+
+//		playerPos = transform.position;
+//		playerRot = transform.eulerAngles;
 	}
 	
 	// Update is called once per frame
@@ -45,6 +54,7 @@ public class Player : NetworkBehaviour {
 		}
 		if (rigidBody.velocity.magnitude < speed) {
 			rigidBody.velocity += new Vector3 (vx, 0 , vz).normalized;
+			BroadcastMessage ("RotateToForward", new Vector3 (vx, 0, vz));
 		}
 
 		if (GameObject.FindObjectsOfType<Camera> ().Length>1) {
@@ -55,6 +65,7 @@ public class Player : NetworkBehaviour {
 			}
 			playerCamera.gameObject.SetActive (true);
 		}
+			
 
 		//transform.SetPositionAndRotation(playerPos, Quaternion.Euler(playerRot));
 	}
@@ -67,7 +78,19 @@ public class Player : NetworkBehaviour {
 			//camera.SendMessageUpwards ("OnNewPlayerStart");
 		}
 		playerCamera.gameObject.SetActive (true);
+//		GetComponentInChildren<Camera> ().enabled = true;
+//		GetComponentInChildren<AudioListener>().enabled = true;
 	}
+
+//	void OnTriggerStay(Collider obj){
+//		if (isLocalPlayer) {
+//			//Debug.Log ("something trigger, " + obj.name);
+//			GameObject target = obj.gameObject;
+//			if (target.tag == "Player") {
+//				Debug.Log ("Target in sight, fire !!");
+//			}
+//		}
+//	}
 
 //	public void OnNewPlayerStart (){
 //		playerCamera = GetComponentInChildren<Camera> ();
