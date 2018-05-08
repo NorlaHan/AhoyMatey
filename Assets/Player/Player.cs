@@ -6,12 +6,15 @@ using UnityEngine.Networking;
 
 public class Player : NetworkBehaviour {
 
+	public GameObject playerSpawnPoint;
+	public SpawnPointIndicator[] playerSpawnPoints;
+
 	public Vector3 playerPos, playerRot;
 	public float vx , vz, vy, speed = 5f, jumpSpeed = 6f;
 	Rigidbody rigidBody;
 	Camera playerCamera;
 	AudioListener audioListener;
-	GameObject shipHolder;
+
 
 	// Use this for initialization
 	void Start () {
@@ -19,7 +22,12 @@ public class Player : NetworkBehaviour {
 
 		playerCamera = GetComponentInChildren<Camera> ();
 		audioListener = GetComponentInChildren<AudioListener> ();
-//		shipHolder = gameObject.GetComponentInChildren
+
+//		playerSpawnPoint = GameObject.FindObjectOfType<PlayerSpawnPoint> ().gameObject;
+//		playerSpawnPoints = playerSpawnPoint.transform.GetComponentsInChildren<SpawnPointIndicator> ();
+//		for (int i = 0; i < playerSpawnPoints.Length; i++) {
+//			print (playerSpawnPoints [i]);
+//		}
 
 //		playerCamera.enabled = false;
 //		audioListener.enabled = false;
@@ -70,6 +78,7 @@ public class Player : NetworkBehaviour {
 		//transform.SetPositionAndRotation(playerPos, Quaternion.Euler(playerRot));
 	}
 
+	[Command]
 	public override void OnStartLocalPlayer (){
 		playerCamera = GetComponentInChildren<Camera> ();
 		Camera[] cameras = GameObject.FindObjectsOfType<Camera> ();
@@ -78,8 +87,45 @@ public class Player : NetworkBehaviour {
 			//camera.SendMessageUpwards ("OnNewPlayerStart");
 		}
 		playerCamera.gameObject.SetActive (true);
+
+		//Debug.Log ("Test point pass");
+
+		playerSpawnPoint = GameObject.FindObjectOfType<PlayerSpawnPoint> ().gameObject;
+		playerSpawnPoints = playerSpawnPoint.transform.GetComponentsInChildren<SpawnPointIndicator> ();
+
+		for (int i = 0; i < playerSpawnPoints.Length ; i++) {
+			print (playerSpawnPoints[i].name + ", child count is " +playerSpawnPoints[i].transform.childCount);
+			if (playerSpawnPoints[i].transform.childCount == 0) {
+				gameObject.transform.SetParent(playerSpawnPoints[i].transform);
+				gameObject.transform.localPosition = Vector3.zero;
+				gameObject.name = "Player" + (i+1);
+				Debug.Log (name + ", Set parent to , " + playerSpawnPoints [i].name);
+				break;
+			}
+		}
+		RpcSpawn ();
+
 //		GetComponentInChildren<Camera> ().enabled = true;
 //		GetComponentInChildren<AudioListener>().enabled = true;
+	}
+
+	[ClientRpc]
+	void RpcSpawn (){
+		if (NetworkServer.active) return;
+		Debug.Log ("Not a server, RPC");
+		playerSpawnPoint = GameObject.FindObjectOfType<PlayerSpawnPoint> ().gameObject;
+		playerSpawnPoints = playerSpawnPoint.transform.GetComponentsInChildren<SpawnPointIndicator> ();
+
+		for (int i = 0; i < playerSpawnPoints.Length ; i++) {
+			print (playerSpawnPoints[i].name + ", child count is " +playerSpawnPoints[i].transform.childCount);
+			if (playerSpawnPoints[i].transform.childCount == 0) {
+				gameObject.transform.SetParent(playerSpawnPoints[i].transform);
+				gameObject.transform.localPosition = Vector3.zero;
+				gameObject.name = "Player" + (i+1);
+				Debug.Log (name + ", Set parent to , " + playerSpawnPoints [i].name);
+				break;
+			}
+		}
 	}
 
 //	void OnTriggerStay(Collider obj){

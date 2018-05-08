@@ -4,6 +4,7 @@
 [Bb]uild/
 [Bb]uilds/
 Assets/AssetStoreTools*
+Assets/EasyPolyMap/
 
 # Visual Studio cache directory
 .vs/
@@ -33,3 +34,5 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
+terrain.raw
+Assets/Environments/Textures/HeightMap.raw

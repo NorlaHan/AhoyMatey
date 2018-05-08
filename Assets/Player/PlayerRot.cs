@@ -18,7 +18,7 @@ public class PlayerRot : MonoBehaviour {
 	void RotateToForward (Vector3 forwardDir){
 		//Debug.Log ("forward received, " + forward);
 		float step = rotSpeed * Time.deltaTime;
-		Vector3 newDir = Vector3.RotateTowards (transform.forward, forwardDir, step, 0f);
+		Vector3 newDir = Vector3.RotateTowards (transform.forward, forwardDir, step, 0.5f);
 		transform.rotation = Quaternion.LookRotation (newDir);
 	}
 }
