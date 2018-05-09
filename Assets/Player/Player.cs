@@ -6,8 +6,8 @@ using UnityEngine.Networking;
 
 public class Player : NetworkBehaviour {
 
-	public GameObject playerSpawnPoint;
-	public SpawnPointIndicator[] playerSpawnPoints;
+	public GameObject playerSpawnMaster;
+	public PlayerSpawnPoint[] playerSpawnPoints;
 
 	public Vector3 playerPos, playerRot;
 	public float vx , vz, vy, speed = 5f, jumpSpeed = 6f;
@@ -22,6 +22,8 @@ public class Player : NetworkBehaviour {
 
 		playerCamera = GetComponentInChildren<Camera> ();
 		audioListener = GetComponentInChildren<AudioListener> ();
+
+
 
 //		playerSpawnPoint = GameObject.FindObjectOfType<PlayerSpawnPoint> ().gameObject;
 //		playerSpawnPoints = playerSpawnPoint.transform.GetComponentsInChildren<SpawnPointIndicator> ();
@@ -65,6 +67,7 @@ public class Player : NetworkBehaviour {
 			BroadcastMessage ("RotateToForward", new Vector3 (vx, 0, vz));
 		}
 
+		// disable any other cameras other than the player's.
 		if (GameObject.FindObjectsOfType<Camera> ().Length>1) {
 			playerCamera = GetComponentInChildren<Camera> ();
 			Camera[] cameras = GameObject.FindObjectsOfType<Camera> ();
@@ -78,7 +81,38 @@ public class Player : NetworkBehaviour {
 		//transform.SetPositionAndRotation(playerPos, Quaternion.Euler(playerRot));
 	}
 
-	[Command]
+	// TODO sync player name and parent on other client.
+//	#region OnStartClient
+//	public override void OnStartClient ()
+//	{
+//		base.OnStartClient ();
+//		Player[] players = GameObject.FindObjectsOfType<Player> ();
+//		foreach (var item in players) {
+//			Debug.Log (name + ", OnStartClient");
+//			if (!isLocalPlayer) {
+//				CmdSyncPlayer ();
+//				Debug.Log (name + ", RpcSyncPlayer");
+//			}
+//		}
+//	}
+//
+//	[Command]
+//	void CmdSyncPlayer(){
+//		Transform playerParent = transform.parent;
+//		string playerName = name;
+//		OnSyncPlayer ( playerParent , playerName);
+//		Debug.Log ("playerParent :"+playerParent.name + ", playerName : " + playerName);
+//	}
+//
+//
+//	[Client]
+//	void OnSyncPlayer (Transform playerParent, string playerName){
+//		name = playerName;
+//		transform.SetParent (playerParent);
+//	}
+//	#endregion
+
+	#region StartLocalPlayer
 	public override void OnStartLocalPlayer (){
 		playerCamera = GetComponentInChildren<Camera> ();
 		Camera[] cameras = GameObject.FindObjectsOfType<Camera> ();
@@ -88,45 +122,58 @@ public class Player : NetworkBehaviour {
 		}
 		playerCamera.gameObject.SetActive (true);
 
-		//Debug.Log ("Test point pass");
+		CmdPlayerSpawn ();
+		//RpcPlayerSpawn ();
+		//PlayerSpawn ();
+	}
 
-		playerSpawnPoint = GameObject.FindObjectOfType<PlayerSpawnPoint> ().gameObject;
-		playerSpawnPoints = playerSpawnPoint.transform.GetComponentsInChildren<SpawnPointIndicator> ();
-
-		for (int i = 0; i < playerSpawnPoints.Length ; i++) {
-			print (playerSpawnPoints[i].name + ", child count is " +playerSpawnPoints[i].transform.childCount);
-			if (playerSpawnPoints[i].transform.childCount == 0) {
-				gameObject.transform.SetParent(playerSpawnPoints[i].transform);
-				gameObject.transform.localPosition = Vector3.zero;
-				gameObject.name = "Player" + (i+1);
-				Debug.Log (name + ", Set parent to , " + playerSpawnPoints [i].name);
+	// check which spawn point to spawn, then pass the spawn i to client.
+	[Command]
+	void CmdPlayerSpawn () {
+		Debug.Log (name + ", Command called");
+		playerSpawnMaster = GameObject.FindObjectOfType<PlayerSpawnMaster> ().gameObject;
+		playerSpawnPoints = playerSpawnMaster.transform.GetComponentsInChildren<PlayerSpawnPoint> ();
+		for (int i = 0; i < playerSpawnPoints.Length; i++) {
+			print (playerSpawnPoints [i].name + ", child count is " + playerSpawnPoints [i].transform.childCount);
+			if (playerSpawnPoints [i].transform.childCount < 2) {
+				RpcPlayerSpawn (i);
 				break;
 			}
 		}
-		RpcSpawn ();
-
-//		GetComponentInChildren<Camera> ().enabled = true;
-//		GetComponentInChildren<AudioListener>().enabled = true;
 	}
+
 
 	[ClientRpc]
-	void RpcSpawn (){
-		if (NetworkServer.active) return;
-		Debug.Log ("Not a server, RPC");
-		playerSpawnPoint = GameObject.FindObjectOfType<PlayerSpawnPoint> ().gameObject;
-		playerSpawnPoints = playerSpawnPoint.transform.GetComponentsInChildren<SpawnPointIndicator> ();
+	void RpcPlayerSpawn (int i){
+		playerSpawnMaster = GameObject.FindObjectOfType<PlayerSpawnMaster> ().gameObject;
+		playerSpawnPoints = playerSpawnMaster.transform.GetComponentsInChildren<PlayerSpawnPoint> ();
+		gameObject.transform.SetParent (playerSpawnPoints [i].transform);
+		gameObject.transform.localPosition = Vector3.zero;
+		gameObject.name = "Player" + (i + 1);
+		Debug.Log (name + ", Set parent to , " + playerSpawnPoints [i].name);
 
-		for (int i = 0; i < playerSpawnPoints.Length ; i++) {
-			print (playerSpawnPoints[i].name + ", child count is " +playerSpawnPoints[i].transform.childCount);
-			if (playerSpawnPoints[i].transform.childCount == 0) {
-				gameObject.transform.SetParent(playerSpawnPoints[i].transform);
-				gameObject.transform.localPosition = Vector3.zero;
-				gameObject.name = "Player" + (i+1);
-				Debug.Log (name + ", Set parent to , " + playerSpawnPoints [i].name);
-				break;
-			}
-		}
+		Debug.Log (name + ", ClientRpc called");
 	}
+
+	#endregion
+
+//	void PlayerSpawn(){
+//		Debug.Log (name + ", PlayerSpawn called");
+//		playerSpawnMaster = GameObject.FindObjectOfType<PlayerSpawnMaster> ().gameObject;
+//		playerSpawnPoints = playerSpawnMaster.transform.GetComponentsInChildren<PlayerSpawnPoint> ();
+//		for (int i = 0; i < playerSpawnPoints.Length; i++) {
+//			print (playerSpawnPoints [i].name + ", child count is " + playerSpawnPoints [i].transform.childCount);
+//			if (playerSpawnPoints [i].transform.childCount == 0) {
+//				gameObject.transform.SetParent (playerSpawnPoints [i].transform);
+//				gameObject.transform.localPosition = Vector3.zero;
+//
+//				//gameObject.transform.position = playerSpawnPoints [i].transform.position;
+//				gameObject.name = "Player" + (i + 1);
+//				Debug.Log (name + ", Set parent to , " + playerSpawnPoints [i].name);
+//				break;
+//			}
+//		}
+//	}
 
 //	void OnTriggerStay(Collider obj){
 //		if (isLocalPlayer) {

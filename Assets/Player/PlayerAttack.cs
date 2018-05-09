@@ -5,7 +5,7 @@ using UnityEngine.Networking;
 
 public class PlayerAttack : MonoBehaviour {
 	
-	public GameObject cannonBall;
+	public GameObject cannonBall, currentTarget;
 	public float fireRate = 2f;
 
 
@@ -37,18 +37,37 @@ public class PlayerAttack : MonoBehaviour {
 
 	void OnTriggerStay(Collider obj){
 			//Debug.Log ("something trigger, " + obj.name);
-			GameObject target = obj.gameObject;
-			if (target.tag == "Player") {
-				Vector3 fireVector;
-				GameObject FiredCannon;
-				Debug.Log (name + ", Target in sight, fire !!");
-				if (fireCount>= fireRate) {
-					fireCount = 0;
-					fireVector = (target.transform.position - spawnPos.transform.position).normalized;
-					FiredCannon = Instantiate (cannonBall, spawnPos.transform.position, Quaternion.identity);
-					FiredCannon.transform.SetParent (playerProjectiles.transform);
-					FiredCannon.GetComponent<CannonBall> ().CannonFire (fireVector);
-				}
+		GameObject target = obj.gameObject;
+		if (target.tag == "Player") {
+			Vector3 fireVector;
+			GameObject FiredCannon;
+
+			if (currentTarget == null) {
+				currentTarget = target;
 			}
+				
+			//Debug.Log (name + ", Target in sight, fire !!");
+			if (fireCount>= fireRate) {
+				fireCount = 0;
+				// where to fire
+				fireVector = (currentTarget.transform.position - spawnPos.transform.position).normalized;
+				// put all cannon under playerProjectiles
+				FiredCannon = Instantiate (cannonBall, spawnPos.transform.position, Quaternion.identity);
+				FiredCannon.transform.SetParent (playerProjectiles.transform);
+				
+				// who is the attacker
+				GameObject attacker = transform.parent.transform.parent.gameObject;
+				FiredCannon.GetComponent<CannonBall> ().SetAttacker (attacker);
+				
+				FiredCannon.GetComponent<CannonBall> ().CannonFire (fireVector);
+			}
+		}
+	}
+
+	void OnTriggerExit (Collider obj){
+		GameObject target = obj.gameObject;
+		if (currentTarget == target) {
+			currentTarget = null;
+		}
 	}
 }

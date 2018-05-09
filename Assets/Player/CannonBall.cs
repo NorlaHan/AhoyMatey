@@ -6,6 +6,7 @@ public class CannonBall : MonoBehaviour {
 
 	public float ballSpeed = 40f, lifeTime = 4f;
 	public float ballDamage = 20f;
+	public GameObject attacker;
 	public Vector3 upVelocity = new Vector3 (0f, 6.5f, 0f);
 
 	private Rigidbody rigidBody;
@@ -34,8 +35,12 @@ public class CannonBall : MonoBehaviour {
 	void OnCollisionEnter (Collision obj){
 		GameObject target = obj.gameObject;
 		if (target.tag == "Player") {
-			target.GetComponent<Health> ().OnTakeDamage (ballDamage);
+			target.GetComponent<Health> ().OnTakeDamage (ballDamage,attacker);
 		}
 		//Destroy (gameObject);
+	}
+
+	public void SetAttacker(GameObject theAttacker){
+		attacker = theAttacker;
 	}
 }

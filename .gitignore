@@ -36,3 +36,4 @@ sysinfo.txt
 *.unitypackage
 terrain.raw
 Assets/Environments/Textures/HeightMap.raw
+Assets/EasyPolyMap.meta
