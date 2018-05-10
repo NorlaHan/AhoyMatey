@@ -1,8 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 
-public class CannonBall : MonoBehaviour {
+public class CannonBall : NetworkBehaviour {
 
 	public float ballSpeed = 40f, lifeTime = 4f;
 	public float ballDamage = 20f;
@@ -33,9 +34,12 @@ public class CannonBall : MonoBehaviour {
 	}
 
 	void OnCollisionEnter (Collision obj){
+		if (!isServer) {
+			return;
+		}
 		GameObject target = obj.gameObject;
 		if (target.tag == "Player") {
-			target.GetComponent<Health> ().OnTakeDamage (ballDamage,attacker);
+			target.GetComponent<Health> ().CmdOnTakeDamage (ballDamage,attacker);
 		}
 		//Destroy (gameObject);
 	}

@@ -5,14 +5,17 @@ using UnityEngine.Networking;
 
 public class PlayerTreasureStash : NetworkBehaviour {
 
-	[SyncVar]
+	[SyncVar(hook = "OnChangeTreasureCarry")]
 	public float playerTreasureCarry;
 
-	public float lootPenalty = 4f;
+	public Player player;
+
+	public float lootPenalty = 4f, startTreasure = 0;
 
 	// Use this for initialization
 	void Start () {
-		
+		// Start with 100 treasure.
+		playerTreasureCarry = startTreasure;
 	}
 	
 	// Update is called once per frame
@@ -39,4 +42,12 @@ public class PlayerTreasureStash : NetworkBehaviour {
 	public void TreasureLoot (float lootedTreasure){
 		playerTreasureCarry += lootedTreasure;
 	}
+
+	// Send message to player
+	void OnChangeTreasureCarry (float treasure){
+		Debug.Log ("Pick up treasure " + treasure);
+		SendMessageUpwards ("ReceiveTreasureCarryChange", treasure);
+		Debug.Log ("ReceiveTreasureCarryChange");
+	}
+		
 }

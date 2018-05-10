@@ -1,9 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
+//using UnityEngine.Networking;
 
-public class PlayerSpawnMaster : NetworkBehaviour {
+public class PlayerSpawnMaster : MonoBehaviour {
 	
 	//public PlayerSpawnPoint[] playerSpawnPoints;
 

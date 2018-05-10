@@ -15,7 +15,8 @@ public class Health : NetworkBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		currentHealth = fullHealth;
+		if (!isServer) {return;}
+		CmdFullHealth ();
 	}
 	
 	// Update is called once per frame
@@ -23,7 +24,13 @@ public class Health : NetworkBehaviour {
 		
 	}
 
-	public void OnTakeDamage (float damage, GameObject theAttacker){
+	[Command]
+	void CmdFullHealth (){
+		currentHealth = fullHealth;
+	}
+
+	[Command]
+	public void CmdOnTakeDamage (float damage, GameObject theAttacker){
 		if (!isServer) {
 			return;
 		}
