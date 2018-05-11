@@ -6,15 +6,22 @@ using UnityEngine.Networking;
 
 public class Player : NetworkBehaviour {
 
-	public GameObject playerSpawnMaster;
 	public PlayerSpawnPoint[] playerSpawnPoints;
+	public GameObject playerUIPrefab;
+	public PlayerBase playerBase;
+//	[SyncVar]
+//	public string playerName , playerParentName;
+
+	public float treasureCarried, treasureStoraged;
 
 	public Vector3 playerPos, playerRot;
-	public float vx , vz, vy, speed = 5f, jumpSpeed = 6f, treasureCarried, treasureStoraged;
-	Rigidbody rigidBody;
-	Camera playerCamera;
-	AudioListener audioListener;
-	UITreasure uiTreasure;
+	public float vx , vz, vy, speed = 5f, jumpSpeed = 6f; 
+
+
+	private Rigidbody rigidBody;
+	private Camera playerCamera;
+	private AudioListener audioListener;
+	private UIPlayer uiTreasure;
 
 
 	// Use this for initialization
@@ -24,7 +31,10 @@ public class Player : NetworkBehaviour {
 		playerCamera = GetComponentInChildren<Camera> ();
 		audioListener = GetComponentInChildren<AudioListener> ();
 
-		uiTreasure = GameObject.FindObjectOfType<UITreasure> ();
+		uiTreasure = Instantiate (playerUIPrefab).GetComponentInChildren<UIPlayer>();
+		uiTreasure.LinkUIToPlayer (this, playerBase);
+
+		//uiTreasure = GameObject.FindObjectOfType<UIPlayer> ();
 
 		//		playerSpawnPoint = GameObject.FindObjectOfType<PlayerSpawnPoint> ().gameObject;
 		//		playerSpawnPoints = playerSpawnPoint.transform.GetComponentsInChildren<SpawnPointIndicator> ();
@@ -78,6 +88,16 @@ public class Player : NetworkBehaviour {
 			playerCamera.gameObject.SetActive (true);
 		}
 
+//		if (name != playerName) {
+//			name = playerName;
+//			Debug.Log (name);
+//		}
+//		Debug.Log (transform.parent);
+//		if (!transform.parent) {
+//			Debug.Log (name);
+//			transform.SetParent (GameObject.Find ("playerParentName").transform);
+//			Debug.Log (transform.parent.name);
+//		}
 
 		//transform.SetPositionAndRotation(playerPos, Quaternion.Euler(playerRot));
 	}
@@ -157,18 +177,21 @@ public class Player : NetworkBehaviour {
 		Debug.Log (name + ", ClientRpc called");
 		//playerSpawnMaster = GameObject.FindObjectOfType<PlayerSpawnMaster> ().gameObject;
 		//playerSpawnPoints = playerSpawnMaster.transform.GetComponentsInChildren<PlayerSpawnPoint> ();
-		playerSpawnPoints = FindObjectsOfType<PlayerSpawnPoint> ();
 
+		playerSpawnPoints = FindObjectsOfType<PlayerSpawnPoint> ();
 		gameObject.transform.SetParent (playerSpawnPoints [i].transform);
 		gameObject.transform.localPosition = Vector3.zero;
 		gameObject.name = "Player" + (i + 1);
 		Debug.Log ("Spawn " + name + " to " + playerSpawnPoints [i].name);
 
+//		playerName = gameObject.name;
+//		playerParentName = transform.parent.name;
+
 		// Cast self to the UI on the client.
-		PlayerBase playerBase = transform.parent.GetComponentInChildren<PlayerBase> ();
+		playerBase = transform.parent.GetComponentInChildren<PlayerBase> ();
 		playerBase.BaseLinkToPlayer (gameObject);
-		uiTreasure = GameObject.FindObjectOfType<UITreasure> ();
-		uiTreasure.LinkUIToPlayer (this, playerBase);
+
+
 
 	}
 
@@ -185,8 +208,19 @@ public class Player : NetworkBehaviour {
 	}
 
 	void UpdateUITreasure(){
-		uiTreasure = GameObject.FindObjectOfType<UITreasure> ();
-		uiTreasure.UpdateTreasure (treasureStoraged, treasureCarried);
+		//if (!uiTreasure) {uiTreasure = GameObject.FindObjectOfType<UIPlayer> ();}
+		if (uiTreasure) {
+			uiTreasure.UIUpdateTreasure (treasureStoraged, treasureCarried);
+		}
+
+	}
+
+	void UpdatePlayerHealth(float playerHealthPercentage){
+		//if (!uiTreasure) {uiTreasure = GameObject.FindObjectOfType<UIPlayer> ();}
+		if (uiTreasure) {
+			uiTreasure.UIUpdatePlayerHealth (playerHealthPercentage);
+		}
+
 	}
 	//	void PlayerSpawn(){
 	//		Debug.Log (name + ", PlayerSpawn called");

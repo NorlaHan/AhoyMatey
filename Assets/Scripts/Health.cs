@@ -9,12 +9,12 @@ public class Health : NetworkBehaviour {
 	public float fullHealth = 100f;
 	public bool destroyOnDeath = false;
 
-	//[SyncVar(hook = "OnChangeHealth")]	// Whenever current health  changed, call OnChangeHealth method.
-	[SyncVar]
+	[SyncVar(hook = "OnChangeHealth")]	// Whenever current health  changed, call OnChangeHealth method.
 	public float currentHealth;
 
 	// Use this for initialization
 	void Start () {
+		OnChangeHealth (currentHealth);
 		if (!isServer) {return;}
 		CmdFullHealth ();
 	}
@@ -28,9 +28,8 @@ public class Health : NetworkBehaviour {
 	void CmdFullHealth (){
 		currentHealth = fullHealth;
 	}
-
-	[Command]
-	public void CmdOnTakeDamage (float damage, GameObject theAttacker){
+		
+	public void OnTakeDamage (float damage, GameObject theAttacker){
 		if (!isServer) {
 			return;
 		}
@@ -52,11 +51,20 @@ public class Health : NetworkBehaviour {
 		}
 	}
 
+//	[ClientRpc]
+//	void RpcOnTakeDamage(){
+//		
+//	}
+
 	[ClientRpc]
 	void RpcRespawn (){
 		if (isLocalPlayer) {
 			transform.localPosition = Vector3.zero;
 		}
+	}
+
+	public void OnChangeHealth(float crtHealth){
+		SendMessage ("UpdatePlayerHealth", crtHealth / fullHealth);
 	}
 
 //	void OnDeath(){

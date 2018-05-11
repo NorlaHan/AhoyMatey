@@ -34,12 +34,12 @@ public class CannonBall : NetworkBehaviour {
 	}
 
 	void OnCollisionEnter (Collision obj){
-		if (!isServer) {
-			return;
-		}
+//		if (!isServer) {
+//			return;
+//		}
 		GameObject target = obj.gameObject;
 		if (target.tag == "Player") {
-			target.GetComponent<Health> ().CmdOnTakeDamage (ballDamage,attacker);
+			target.GetComponent<Health> ().OnTakeDamage (ballDamage,attacker);
 		}
 		//Destroy (gameObject);
 	}

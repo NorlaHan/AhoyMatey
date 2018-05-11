@@ -11,11 +11,16 @@ public class PlayerBase : NetworkBehaviour {
 	[SyncVar]
 	public GameObject player;
 
+	//public string playerName;
+
+
 	public float winTreasureAmount = 2000;
 
 	// Use this for initialization
 	void Start () {
-		
+		if (!player) {
+			
+		}
 	}
 	
 	// Update is called once per frame
@@ -55,7 +60,12 @@ public class PlayerBase : NetworkBehaviour {
 
 	void OnBaseTreasureStorageChange (float treasure){
 		if (!isServer) {return;}
-		player.GetComponent<Player>().ReceiveBaseTreasureStorageChange (treasure);
+//		if (!player) {
+//			Debug.Log (name + ", no player assigned ,find player");
+//			player = GameObject.Find ("playerName");
+//		}
+		player.GetComponent<Player> ().ReceiveBaseTreasureStorageChange (treasure);
+
 		//BroadcastMessage ("ReceiveBaseTreasureStorageChange", treasure);
 	}
 }
