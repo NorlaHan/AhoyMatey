@@ -30,9 +30,10 @@ public class GameManager : NetworkBehaviour {
 	
 	}
 
-	public void OnPlayerGameSettle (string playerWinName){
+	public void OnPlayerGameSettle (GameObject playerWinner){
 		uiEnding.SetActive (true);
-		uiEnding.GetComponent<UIEnding> ().playerWinName = playerWinName;
+		//uiEnding.GetComponent<UIEnding> ().playerWinName = playerWinName;
+		uiEnding.GetComponent<UIEnding> ().GameResult (playerWinner);
 		Debug.Log (name + ", OnPlayerGameSettle");
 	}
 }

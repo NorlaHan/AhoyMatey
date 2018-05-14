@@ -6,24 +6,29 @@ using UnityEngine.Networking;
 
 public class UIEnding : NetworkBehaviour {
 
-	public Text playerName;
+	public Text playerName, Result;
 
 	//[SyncVar(hook = "GameResult")]
 	//public GameObject playerWinner;
 
-	[SyncVar(hook = "GameResult")]
-	public string playerWinName;
+//	[SyncVar]
+//	public string playerWinName;
 
 	// Use this for initialization
 	void Start () {
-		if (!playerName) {
-			Text[] texts = GameObject.FindObjectsOfType<Text> ();
-			foreach (Text item in texts) {
-				if (item.name == "UIPlayerName") {
-					playerName = item;
-				}
-			}
-		}
+//		if (!playerName) {
+//			Text[] texts = GameObject.FindObjectsOfType<Text> ();
+//			foreach (Text item in texts) {
+//				if (item.name == "UIPlayerName") {
+//					playerName = item;
+//				}
+//				if (item.name == "UIResult") {
+//					Result = item;
+//				} else {
+//					
+//				}
+//			}
+//		}
 	}
 	
 	// Update is called once per frame
@@ -31,9 +36,13 @@ public class UIEnding : NetworkBehaviour {
 		
 	}
 
-	public void GameResult (string playerWinName){
-		playerName.text = playerWinName;
-		Debug.Log ("Winner");
+	public void GameResult (GameObject playerWinner){
+		if (playerWinner.GetComponent<Player>().IsLocalPlayer()) {
+			Result.text = "You Win !!";
+		}else{
+			Result.text = "You Lose !!";
+		}
+		playerName.text = playerWinner.name;
 	}
 
 }

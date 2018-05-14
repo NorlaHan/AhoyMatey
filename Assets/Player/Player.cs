@@ -6,7 +6,8 @@ using UnityEngine.Networking;
 
 public class Player : NetworkBehaviour {
 
-	public bool isDebugMode = false;
+	[SyncVar]
+	public bool isDebugMode = false , isGameEnd = false;
 
 	public PlayerSpawnPoint[] playerSpawnPoints;
 	public GameObject playerUIPrefab ;
@@ -39,14 +40,11 @@ public class Player : NetworkBehaviour {
 		Camera[] cameras = GameObject.FindObjectsOfType<Camera> ();
 		foreach (var camera in cameras) {
 			camera.gameObject.SetActive(false);
-			//camera.SendMessageUpwards ("OnNewPlayerStart");
 		}
 		playerCamera.gameObject.SetActive (true);
-		//playerSpawnPoints = FindObjectsOfType<PlayerSpawnPoint> ();
 
 		CmdPlayerSpawn ();
-		//RpcPlayerSpawn ();
-		//PlayerSpawn ();
+
 	}
 
 	// check which spawn point to spawn, then pass the spawn i to client.
@@ -64,16 +62,9 @@ public class Player : NetworkBehaviour {
 			if (!playerSpawnPoints [i].GetComponentInChildren<Player>()) {
 				Debug.Log (playerSpawnPoints [i].name + " have no player.");
 
-				// Same as Rpc later on.
 				gameObject.transform.SetParent (playerSpawnPoints [i].transform);
-				//gameObject.transform.localPosition = Vector3.zero;
 				gameObject.name = "Player" + (i + 1);
 				Debug.Log ("Spawn " + name + " to " + playerSpawnPoints [i].name);
-
-				// Cast self to the UI on the client.
-//				playerBase = transform.parent.GetComponentInChildren<PlayerBase> ().gameObject;
-//				playerBase.GetComponentInChildren<PlayerBase> ().BaseLinkToPlayer (gameObject);
-				//
 
 				RpcPlayerSpawn (i);
 				isFull = false;
@@ -136,7 +127,9 @@ public class Player : NetworkBehaviour {
 
 	// Update is called once per frame
 	void Update () {
-
+		if (isGameEnd) {
+			return;
+		}
 		// Not local player will stop here.
 		if (!isLocalPlayer) {
 			try {
@@ -211,72 +204,12 @@ public class Player : NetworkBehaviour {
 		}
 	}
 
-	// Check if it's parent and name is same as the server.
-//	[Client]
-//	void CheckClientHierarchy (){
-//		if (!transform.parent) {
-//			Debug.Log (name + ", have no parent. command server");
-//			CmdGetServerParent ();
-//		}
-//
-//	}
-//
-//	[Command]
-//	void CmdGetServerParent (){
-//		Debug.Log ("CmdGetServerParent ()");
-//		RpcSetClientParent (playerBase.name);
-//		Debug.Log (name + ", passing playerbase name :" + playerBase.name);
-//	}
-//
-//	[ClientRpc]
-//	void RpcSetClientParent (string serverPlayerBaseName){
-//		Debug.Log ("RpcSetClientParent ()");
-//		Debug.Log (serverPlayerBaseName);
-//		transform.SetParent (GameObject.Find ("serverPlayerBaseName").transform.parent);
-//		playerBase = GameObject.Find("serverPlayerBaseName").GetComponent<PlayerBase>();
-//		transform.SetParent (playerBase.transform.parent);
-//		playerBase.BaseLinkToPlayer (gameObject);
-//	}
-
-
 	public void DestroyUnusedUI (){
 		if (uiPlayer) {
 			uiPlayer.SelfDestruct ();
 		}
 	}
-
-	// TODO sync player name and parent on other client.
-	//	#region OnStartClient
-	//	public override void OnStartClient ()
-	//	{
-	//		base.OnStartClient ();
-	//		Player[] players = GameObject.FindObjectsOfType<Player> ();
-	//		foreach (var item in players) {
-	//			Debug.Log (name + ", OnStartClient");
-	//			if (!isLocalPlayer) {
-	//				CmdSyncPlayer ();
-	//				Debug.Log (name + ", RpcSyncPlayer");
-	//			}
-	//		}
-	//	}
-	//
-	//	[Command]
-	//	void CmdSyncPlayer(){
-	//		Transform playerParent = transform.parent;
-	//		string playerName = name;
-	//		OnSyncPlayer ( playerParent , playerName);
-	//		Debug.Log ("playerParent :"+playerParent.name + ", playerName : " + playerName);
-	//	}
-	//
-	//
-	//	[Client]
-	//	void OnSyncPlayer (Transform playerParent, string playerName){
-	//		name = playerName;
-	//		transform.SetParent (playerParent);
-	//	}
-	//	#endregion
-
-
+		
 	void ReceiveTreasureCarryChange (float treasureCarryInStash){
 		treasureCarried = treasureCarryInStash;
 		UpdateUITreasure ();
@@ -286,14 +219,31 @@ public class Player : NetworkBehaviour {
 	public void ReceiveBaseTreasureStorageChange (float treasureStorageInBase){
 		treasureStoraged = treasureStorageInBase;
 		UpdateUITreasure ();
-		if (treasureStoraged >= treasureToWin) {
-			OnGameSettle ();
+		if (treasureStoraged >= treasureToWin && !isGameEnd) {
+			CmdOnGameSettle (gameObject);
 		}
+	}
+
+	[Command]
+	public void CmdOnGameSettle (GameObject playerWinner){
+		//if (!isServer) {return;}
+		// Game settled , set all player isGameEnd to true.
+		Player[] players = GameObject.FindObjectsOfType<Player> ();
+		foreach (var item in players) {
+			item.isGameEnd = true;
+		}
+		RpcOnGameSettle (playerWinner);
+	}
+
+	[ClientRpc]
+	void RpcOnGameSettle (GameObject playerWinner ){
+		//isGameEnd = true;
+		//isGameEnd = true;
+		gameManager.OnPlayerGameSettle (playerWinner);
 	}
 
 	[Client]
 	void UpdateUITreasure(){
-		//if (!uiTreasure) {uiTreasure = GameObject.FindObjectOfType<UIPlayer> ();}
 		if (uiPlayer) {
 			uiPlayer.UIUpdateTreasure (treasureStoraged, treasureCarried);
 		}
@@ -301,25 +251,23 @@ public class Player : NetworkBehaviour {
 
 	[Client]
 	void UpdatePlayerHealth(float playerHealthPercentage){
-		//if (!uiTreasure) {uiTreasure = GameObject.FindObjectOfType<UIPlayer> ();}
 		if (uiPlayer) {
 			uiPlayer.UIUpdatePlayerHealth (playerHealthPercentage);
 		}
 
 	}
 
-	[Server]
-	public void OnGameSettle (){
-		if (!isServer) {return;}
-		GameSettle ();
+	public bool IsLocalPlayer (){
+		return isLocalPlayer;
 	}
 
-	[Server]
-	void GameSettle () {
-		if (!isServer) {return;}
-		gameManager.OnPlayerGameSettle (name);
-		Debug.Log (name + ", OnGameSettle");
-	}
+
+//	[Server]
+//	void GameSettle () {
+//		if (!isServer) {return;}
+//		gameManager.OnPlayerGameSettle (name);
+//		Debug.Log (name + ", OnGameSettle");
+//	}
 	//	void PlayerSpawn(){
 	//		Debug.Log (name + ", PlayerSpawn called");
 	//		playerSpawnMaster = GameObject.FindObjectOfType<PlayerSpawnMaster> ().gameObject;
