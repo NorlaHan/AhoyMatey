@@ -5,6 +5,8 @@ using UnityEngine.Networking;
 
 public class PlayerTreasureStash : NetworkBehaviour {
 
+	public bool isDebugMode = false;
+
 	[SyncVar(hook = "OnChangeTreasureCarry")]
 	public float playerTreasureCarry;
 
@@ -20,7 +22,9 @@ public class PlayerTreasureStash : NetworkBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		
+		if (isDebugMode) {
+			playerTreasureCarry += 1;
+		}
 	}
 
 	// Store the treasure carried to the base.
@@ -45,9 +49,8 @@ public class PlayerTreasureStash : NetworkBehaviour {
 
 	// Send message to player
 	void OnChangeTreasureCarry (float treasure){
-		Debug.Log ("Pick up treasure " + treasure);
-		SendMessageUpwards ("ReceiveTreasureCarryChange", treasure);
-		Debug.Log ("ReceiveTreasureCarryChange");
+		SendMessage ("ReceiveTreasureCarryChange",treasure);
+		Debug.Log (name + ", TreasureCarryChange");
 	}
 		
 }

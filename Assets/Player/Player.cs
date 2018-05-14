@@ -6,13 +6,16 @@ using UnityEngine.Networking;
 
 public class Player : NetworkBehaviour {
 
+	public bool isDebugMode = false;
+
 	public PlayerSpawnPoint[] playerSpawnPoints;
-	public GameObject playerUIPrefab;
+	public GameObject playerUIPrefab ;
 	public PlayerBase playerBase;
+	public GameManager gameManager;
 //	[SyncVar]
 //	public string playerName , playerParentName;
 
-	public float treasureCarried, treasureStoraged;
+	public float treasureCarried, treasureStoraged , treasureToWin = 2000f;
 
 	public Vector3 playerPos, playerRot;
 	public float vx , vz, vy, speed = 5f, jumpSpeed = 6f; 
@@ -21,7 +24,81 @@ public class Player : NetworkBehaviour {
 	private Rigidbody rigidBody;
 	private Camera playerCamera;
 	private AudioListener audioListener;
-	private UIPlayer uiTreasure;
+	private UIPlayer uiPlayer;
+
+
+	#region StartLocalPlayer
+	public override void OnStartLocalPlayer (){
+		playerCamera = GetComponentInChildren<Camera> ();
+		Camera[] cameras = GameObject.FindObjectsOfType<Camera> ();
+		foreach (var camera in cameras) {
+			camera.gameObject.SetActive(false);
+			//camera.SendMessageUpwards ("OnNewPlayerStart");
+		}
+		playerCamera.gameObject.SetActive (true);
+		//playerSpawnPoints = FindObjectsOfType<PlayerSpawnPoint> ();
+
+		CmdPlayerSpawn ();
+		//RpcPlayerSpawn ();
+		//PlayerSpawn ();
+	}
+
+	// check which spawn point to spawn, then pass the spawn i to client.
+
+
+	[Command]
+	void CmdPlayerSpawn () {
+		bool isFull = true;
+		Debug.Log (name + ", Command called");
+
+		playerSpawnPoints = FindObjectsOfType<PlayerSpawnPoint> ();
+
+		for (int i = 0; i < playerSpawnPoints.Length; i++) {
+			Debug.Log ("Checking " + playerSpawnPoints [i].name + "...");
+			if (!playerSpawnPoints [i].GetComponentInChildren<Player>()) {
+				Debug.Log (playerSpawnPoints [i].name + " have no player.");
+
+				// Same as Rpc later on.
+				gameObject.transform.SetParent (playerSpawnPoints [i].transform);
+				//gameObject.transform.localPosition = Vector3.zero;
+				gameObject.name = "Player" + (i + 1);
+				Debug.Log ("Spawn " + name + " to " + playerSpawnPoints [i].name);
+
+				// Cast self to the UI on the client.
+				playerBase = transform.parent.GetComponentInChildren<PlayerBase> ();
+				playerBase.BaseLinkToPlayer (gameObject);
+				//
+
+				RpcPlayerSpawn (i);
+				isFull = false;
+				break;
+			}
+		}
+		if (isFull) {
+			Debug.LogWarning (name + " sorry. The game is full. Please connect to another server.");
+		}
+	}
+
+
+	[ClientRpc]
+	void RpcPlayerSpawn (int i){
+		Debug.Log (name + ", ClientRpc called");
+
+		playerSpawnPoints = FindObjectsOfType<PlayerSpawnPoint> ();
+		gameObject.transform.SetParent (playerSpawnPoints [i].transform);
+		gameObject.transform.localPosition = Vector3.zero;
+		gameObject.name = "Player" + (i + 1);
+		Debug.Log ("Spawn " + name + " to " + playerSpawnPoints [i].name);
+
+		// Cast self to the UI on the client.
+
+		playerBase = transform.parent.GetComponentInChildren<PlayerBase> ();
+		playerBase.BaseLinkToPlayer (gameObject);
+	}
+
+
+
+	#endregion
 
 
 	// Use this for initialization
@@ -31,8 +108,9 @@ public class Player : NetworkBehaviour {
 		playerCamera = GetComponentInChildren<Camera> ();
 		audioListener = GetComponentInChildren<AudioListener> ();
 
-		uiTreasure = Instantiate (playerUIPrefab).GetComponentInChildren<UIPlayer>();
-		uiTreasure.LinkUIToPlayer (this, playerBase);
+		InstantiatePlayerUI ();
+
+		gameManager = GameObject.FindObjectOfType<GameManager> ();
 
 		//uiTreasure = GameObject.FindObjectOfType<UIPlayer> ();
 
@@ -47,6 +125,12 @@ public class Player : NetworkBehaviour {
 
 		//		playerPos = transform.position;
 		//		playerRot = transform.eulerAngles;
+	}
+	[Client]
+	void InstantiatePlayerUI ()
+	{
+		uiPlayer = Instantiate (playerUIPrefab).GetComponentInChildren<UIPlayer> ();
+		uiPlayer.LinkUIToPlayer (this, playerBase);
 	}
 
 	// Update is called once per frame
@@ -88,18 +172,59 @@ public class Player : NetworkBehaviour {
 			playerCamera.gameObject.SetActive (true);
 		}
 
-//		if (name != playerName) {
-//			name = playerName;
-//			Debug.Log (name);
-//		}
-//		Debug.Log (transform.parent);
-//		if (!transform.parent) {
-//			Debug.Log (name);
-//			transform.SetParent (GameObject.Find ("playerParentName").transform);
-//			Debug.Log (transform.parent.name);
-//		}
+		// Destroy UI if player is not local.
+		if (GameObject.FindObjectsOfType<Player>().Length >1) {
+			//Debug.Log ("Too many player, start plean up.");
+			Player[] players = GameObject.FindObjectsOfType<Player> ();
+			foreach (Player item in players) {
+				if (!item.isLocalPlayer) {
+					//Debug.Log (item.name + ", is not local, destroy UI");
+					item.DestroyUnusedUI ();
+					//item.enabled = false;
 
-		//transform.SetPositionAndRotation(playerPos, Quaternion.Euler(playerRot));
+				}
+			}
+		}
+
+		//CheckClientHierarchy ();
+
+		if (isDebugMode) {
+			uiPlayer.DebugTest (name);
+		}
+	}
+
+	// Check if it's parent and name is same as the server.
+//	[Client]
+//	void CheckClientHierarchy (){
+//		if (!transform.parent) {
+//			Debug.Log (name + ", have no parent. command server");
+//			CmdGetServerParent ();
+//		}
+//
+//	}
+//
+//	[Command]
+//	void CmdGetServerParent (){
+//		Debug.Log ("CmdGetServerParent ()");
+//		RpcSetClientParent (playerBase.name);
+//		Debug.Log (name + ", passing playerbase name :" + playerBase.name);
+//	}
+//
+//	[ClientRpc]
+//	void RpcSetClientParent (string serverPlayerBaseName){
+//		Debug.Log ("RpcSetClientParent ()");
+//		Debug.Log (serverPlayerBaseName);
+//		transform.SetParent (GameObject.Find ("serverPlayerBaseName").transform.parent);
+//		playerBase = GameObject.Find("serverPlayerBaseName").GetComponent<PlayerBase>();
+//		transform.SetParent (playerBase.transform.parent);
+//		playerBase.BaseLinkToPlayer (gameObject);
+//	}
+
+
+	public void DestroyUnusedUI (){
+		if (uiPlayer) {
+			uiPlayer.SelfDestruct ();
+		}
 	}
 
 	// TODO sync player name and parent on other client.
@@ -133,94 +258,49 @@ public class Player : NetworkBehaviour {
 	//	}
 	//	#endregion
 
-	#region StartLocalPlayer
-	public override void OnStartLocalPlayer (){
-		playerCamera = GetComponentInChildren<Camera> ();
-		Camera[] cameras = GameObject.FindObjectsOfType<Camera> ();
-		foreach (var camera in cameras) {
-			camera.gameObject.SetActive(false);
-			//camera.SendMessageUpwards ("OnNewPlayerStart");
-		}
-		playerCamera.gameObject.SetActive (true);
-
-		CmdPlayerSpawn ();
-		//RpcPlayerSpawn ();
-		//PlayerSpawn ();
-	}
-
-	// check which spawn point to spawn, then pass the spawn i to client.
-	[Command]
-	void CmdPlayerSpawn () {
-		bool isFull = true;
-		Debug.Log (name + ", Command called");
-		//playerSpawnMaster = GameObject.FindObjectOfType<PlayerSpawnMaster> ().gameObject;
-		//playerSpawnPoints = playerSpawnMaster.transform.GetComponentsInChildren<PlayerSpawnPoint> ();
-		playerSpawnPoints = FindObjectsOfType<PlayerSpawnPoint> ();
-
-		for (int i = 0; i < playerSpawnPoints.Length; i++) {
-			Debug.Log ("Checking " + playerSpawnPoints [i].name + "...");
-			if (!playerSpawnPoints [i].GetComponentInChildren<Player>()) {
-				Debug.Log (playerSpawnPoints [i].name + " have no player.");
-				RpcPlayerSpawn (i);
-				isFull = false;
-				break;
-			}
-		}
-		if (isFull) {
-			Debug.LogWarning (name + " sorry. The game is full. Please connect to another server.");
-		}
-	}
-
-
-	[ClientRpc]
-	void RpcPlayerSpawn (int i){
-		Debug.Log (name + ", ClientRpc called");
-		//playerSpawnMaster = GameObject.FindObjectOfType<PlayerSpawnMaster> ().gameObject;
-		//playerSpawnPoints = playerSpawnMaster.transform.GetComponentsInChildren<PlayerSpawnPoint> ();
-
-		playerSpawnPoints = FindObjectsOfType<PlayerSpawnPoint> ();
-		gameObject.transform.SetParent (playerSpawnPoints [i].transform);
-		gameObject.transform.localPosition = Vector3.zero;
-		gameObject.name = "Player" + (i + 1);
-		Debug.Log ("Spawn " + name + " to " + playerSpawnPoints [i].name);
-
-//		playerName = gameObject.name;
-//		playerParentName = transform.parent.name;
-
-		// Cast self to the UI on the client.
-		playerBase = transform.parent.GetComponentInChildren<PlayerBase> ();
-		playerBase.BaseLinkToPlayer (gameObject);
-
-
-
-	}
-
-	#endregion
 
 	void ReceiveTreasureCarryChange (float treasureCarryInStash){
 		treasureCarried = treasureCarryInStash;
 		UpdateUITreasure ();
 	}
 
+	[Client]
 	public void ReceiveBaseTreasureStorageChange (float treasureStorageInBase){
 		treasureStoraged = treasureStorageInBase;
 		UpdateUITreasure ();
+		if (treasureStoraged >= treasureToWin) {
+			OnGameSettle ();
+		}
 	}
 
+	[Client]
 	void UpdateUITreasure(){
 		//if (!uiTreasure) {uiTreasure = GameObject.FindObjectOfType<UIPlayer> ();}
-		if (uiTreasure) {
-			uiTreasure.UIUpdateTreasure (treasureStoraged, treasureCarried);
+		if (uiPlayer) {
+			uiPlayer.UIUpdateTreasure (treasureStoraged, treasureCarried);
+		}
+	}
+
+	[Client]
+	void UpdatePlayerHealth(float playerHealthPercentage){
+		//if (!uiTreasure) {uiTreasure = GameObject.FindObjectOfType<UIPlayer> ();}
+		if (uiPlayer) {
+			uiPlayer.UIUpdatePlayerHealth (playerHealthPercentage);
 		}
 
 	}
 
-	void UpdatePlayerHealth(float playerHealthPercentage){
-		//if (!uiTreasure) {uiTreasure = GameObject.FindObjectOfType<UIPlayer> ();}
-		if (uiTreasure) {
-			uiTreasure.UIUpdatePlayerHealth (playerHealthPercentage);
-		}
+	[Server]
+	public void OnGameSettle (){
+		if (!isServer) {return;}
+		GameSettle ();
+	}
 
+	[Server]
+	void GameSettle () {
+		if (!isServer) {return;}
+		gameManager.OnPlayerGameSettle (name);
+		Debug.Log (name + ", OnGameSettle");
 	}
 	//	void PlayerSpawn(){
 	//		Debug.Log (name + ", PlayerSpawn called");
@@ -269,5 +349,7 @@ public class Player : NetworkBehaviour {
 	//
 	//		playerCamera.gameObject.SetActive (true);
 	//	}
+
+
 }
 

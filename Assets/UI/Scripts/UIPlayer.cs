@@ -38,18 +38,20 @@ public class UIPlayer : MonoBehaviour {
 			}
 		}
 		healthBar = GetComponentInChildren<Slider> ();
-		playerText.text = player.name;
+		//playerText.text = player.name;
 	}
 
 	void Update (){
+
+		// Destroy UI if player doesn't exist.
 		if (!player) {
-			Destroy (gameObject);
+			SelfDestruct ();
 		}
+
+		// Rename if the name is not right
 		if (playerText.text != player.name) {
 			playerText.text = player.name;
 		}
-		GetComponent<RectTransform> ().rect. = new Vector3 (0, 490, 0);
-		GetComponent<RectTransform> ().localScale = new Vector3 (1, 1, 1);
 	}
 
 	public void UIUpdateTreasure(float treasureStoraged, float treasureCarried){
@@ -60,5 +62,13 @@ public class UIPlayer : MonoBehaviour {
 
 	public void UIUpdatePlayerHealth(float playerHealthPercentage){
 		healthBar.value = playerHealthPercentage;
+	}
+
+	public void SelfDestruct (){
+		Destroy (gameObject);
+	}
+
+	public void DebugTest(string playerName){
+		Debug.Log (playerName + " can call " + name);
 	}
 }

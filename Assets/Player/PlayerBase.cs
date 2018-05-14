@@ -5,6 +5,8 @@ using UnityEngine.Networking;
 
 public class PlayerBase : NetworkBehaviour {
 
+	public bool isDebugMode = false;
+
 	[SyncVar(hook = "OnBaseTreasureStorageChange")]
 	public float treasureStorage = 0;
 
@@ -18,14 +20,14 @@ public class PlayerBase : NetworkBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		if (!player) {
-			
-		}
+
 	}
 	
 	// Update is called once per frame
 	void Update () {
-		
+		if (isDebugMode) {
+			treasureStorage += 1;
+		}
 	}
 
 	void OnTriggerEnter (Collider obj){
@@ -33,10 +35,11 @@ public class PlayerBase : NetworkBehaviour {
 		//Debug.Log (name + ", trigger.");
 		if (target.tag == "PlayerStash") {
 			if (target.transform.parent.transform.parent.transform.parent == transform.parent) {
-				treasureStorage += target.GetComponent<PlayerTreasureStash> ().TreasureStoreToBase ();
+				treasureStorage += target.transform.parent.transform.parent.GetComponent<PlayerTreasureStash> ().TreasureStoreToBase ();
 				Debug.Log (target.name + "Player back to base, storage is now : " + treasureStorage);
 				if (treasureStorage >= winTreasureAmount) {
 					Debug.Log (target.transform.parent.transform.parent.name + " Win!");
+					//player.GetComponent<Player>().OnGameSettle ();
 				}
 			} else {
 				// TODO opponent will steal treasure while near (WIP)
@@ -59,13 +62,13 @@ public class PlayerBase : NetworkBehaviour {
 
 
 	void OnBaseTreasureStorageChange (float treasure){
-		if (!isServer) {return;}
+		//if (!isServer) {return;}
 //		if (!player) {
 //			Debug.Log (name + ", no player assigned ,find player");
 //			player = GameObject.Find ("playerName");
 //		}
 		player.GetComponent<Player> ().ReceiveBaseTreasureStorageChange (treasure);
-
+		Debug.Log (name + ", TreasureStorageChange, call " + player.name);
 		//BroadcastMessage ("ReceiveBaseTreasureStorageChange", treasure);
 	}
 }
