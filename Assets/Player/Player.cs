@@ -10,14 +10,19 @@ public class Player : NetworkBehaviour {
 
 	public PlayerSpawnPoint[] playerSpawnPoints;
 	public GameObject playerUIPrefab ;
-	public PlayerBase playerBase;
 	public GameManager gameManager;
+
+	[SyncVar]
+	public GameObject playerBase;
+
+	[SyncVar]
+	public string playerName, parentName, playerBaseName;
 //	[SyncVar]
 //	public string playerName , playerParentName;
 
 	public float treasureCarried, treasureStoraged , treasureToWin = 2000f;
 
-	public Vector3 playerPos, playerRot;
+	// public Vector3 playerPos, playerRot;
 	public float vx , vz, vy, speed = 5f, jumpSpeed = 6f; 
 
 
@@ -28,6 +33,7 @@ public class Player : NetworkBehaviour {
 
 
 	#region StartLocalPlayer
+	// This is trigger on player spawn on the client.
 	public override void OnStartLocalPlayer (){
 		playerCamera = GetComponentInChildren<Camera> ();
 		Camera[] cameras = GameObject.FindObjectsOfType<Camera> ();
@@ -45,11 +51,11 @@ public class Player : NetworkBehaviour {
 
 	// check which spawn point to spawn, then pass the spawn i to client.
 
-
+	// This is called by the player to excicute on the server.
 	[Command]
 	void CmdPlayerSpawn () {
 		bool isFull = true;
-		Debug.Log (name + ", Command called");
+		//Debug.Log (name + ", Command called");
 
 		playerSpawnPoints = FindObjectsOfType<PlayerSpawnPoint> ();
 
@@ -65,8 +71,8 @@ public class Player : NetworkBehaviour {
 				Debug.Log ("Spawn " + name + " to " + playerSpawnPoints [i].name);
 
 				// Cast self to the UI on the client.
-				playerBase = transform.parent.GetComponentInChildren<PlayerBase> ();
-				playerBase.BaseLinkToPlayer (gameObject);
+//				playerBase = transform.parent.GetComponentInChildren<PlayerBase> ().gameObject;
+//				playerBase.GetComponentInChildren<PlayerBase> ().BaseLinkToPlayer (gameObject);
 				//
 
 				RpcPlayerSpawn (i);
@@ -84,16 +90,24 @@ public class Player : NetworkBehaviour {
 	void RpcPlayerSpawn (int i){
 		Debug.Log (name + ", ClientRpc called");
 
+		// Set parent
 		playerSpawnPoints = FindObjectsOfType<PlayerSpawnPoint> ();
 		gameObject.transform.SetParent (playerSpawnPoints [i].transform);
+		parentName = playerSpawnPoints [i].name;
+
+		// Set player
 		gameObject.transform.localPosition = Vector3.zero;
 		gameObject.name = "Player" + (i + 1);
-		Debug.Log ("Spawn " + name + " to " + playerSpawnPoints [i].name);
+		playerName = name;
 
+		//Debug.Log ("Spawn " + name + " to " + playerSpawnPoints [i].name);
+
+		// Set base
+		playerBase = transform.parent.GetComponentInChildren<PlayerBase> ().gameObject;
+		playerBase.name = "Player" + (i + 1) + "Base";
+		playerBaseName = playerBase.name;
 		// Cast self to the UI on the client.
-
-		playerBase = transform.parent.GetComponentInChildren<PlayerBase> ();
-		playerBase.BaseLinkToPlayer (gameObject);
+		playerBase.GetComponentInChildren<PlayerBase> ().BaseLinkToPlayer (gameObject);
 	}
 
 
@@ -107,51 +121,55 @@ public class Player : NetworkBehaviour {
 
 		playerCamera = GetComponentInChildren<Camera> ();
 		audioListener = GetComponentInChildren<AudioListener> ();
-
-		InstantiatePlayerUI ();
-
 		gameManager = GameObject.FindObjectOfType<GameManager> ();
 
-		//uiTreasure = GameObject.FindObjectOfType<UIPlayer> ();
-
-		//		playerSpawnPoint = GameObject.FindObjectOfType<PlayerSpawnPoint> ().gameObject;
-		//		playerSpawnPoints = playerSpawnPoint.transform.GetComponentsInChildren<SpawnPointIndicator> ();
-		//		for (int i = 0; i < playerSpawnPoints.Length; i++) {
-		//			print (playerSpawnPoints [i]);
-		//		}
-
-		//		playerCamera.enabled = false;
-		//		audioListener.enabled = false;
-
-		//		playerPos = transform.position;
-		//		playerRot = transform.eulerAngles;
+		Invoke ("InstantiatePlayerUI" , 0.1f);
+		//InstantiatePlayerUI ();
 	}
+
 	[Client]
 	void InstantiatePlayerUI ()
 	{
 		uiPlayer = Instantiate (playerUIPrefab).GetComponentInChildren<UIPlayer> ();
-		uiPlayer.LinkUIToPlayer (this, playerBase);
+		uiPlayer.LinkUIToPlayer (this, playerBase.GetComponent<PlayerBase>());
 	}
 
 	// Update is called once per frame
 	void Update () {
+
+		// Not local player will stop here.
 		if (!isLocalPlayer) {
+			try {
+				if (!transform.parent && !isServer) {
+					transform.SetParent (GameObject.Find (parentName).transform);
+					Debug.Log (name+", missing parent. set parent to " + parentName);
+				}
+				if (name != playerName) {
+					name = playerName;
+				}
+				if (playerBase.name != playerBaseName) {
+					playerBase.name = playerBaseName;
+				}
+			} catch{
+				Debug.Log ("Something happen when new client join the game.");
+			}
+
 			return;
 		}
 		if (CrossPlatformInputManager.GetButton ("Horizontal")) {
-			playerPos.x += CrossPlatformInputManager.GetAxis ("Horizontal");
+			//playerPos.x += CrossPlatformInputManager.GetAxis ("Horizontal");
 			vx = CrossPlatformInputManager.GetAxis ("Horizontal");
 		}  else {
 			vx = 0;
 		}
 		if (CrossPlatformInputManager.GetButton ("Vertical")) {
-			playerPos.z += CrossPlatformInputManager.GetAxis ("Vertical");
+			//playerPos.z += CrossPlatformInputManager.GetAxis ("Vertical");
 			vz = CrossPlatformInputManager.GetAxis ("Vertical");
 		}  else {
 			vz = 0;
 		}
 		if (CrossPlatformInputManager.GetButtonDown ("Jump")) {
-			playerPos.z += CrossPlatformInputManager.GetAxis ("Jump");
+			//playerPos.z += CrossPlatformInputManager.GetAxis ("Jump");
 			vy = CrossPlatformInputManager.GetAxisRaw ("Jump")*jumpSpeed;
 			rigidBody.velocity += new Vector3 (0, vy, 0);
 		}  else {
