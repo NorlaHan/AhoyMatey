@@ -5,6 +5,8 @@ using UnityEngine.Networking;
 
 public class Treasure : NetworkBehaviour {
 
+	public static int treasureCount;
+
 	[SyncVar]
 	public float treasureAmount;
 
@@ -12,7 +14,8 @@ public class Treasure : NetworkBehaviour {
 	// Use this for initialization
 
 	void Start () {
-		if (!isServer) {return;}
+		Treasure.treasureCount++;
+		//if (!isServer) {return;}
 		CmdRollTreasureAmount ();
 	}
 	
@@ -24,6 +27,12 @@ public class Treasure : NetworkBehaviour {
 	[Command]
 	void CmdRollTreasureAmount (){
 		treasureAmount = Random.Range (minTreasure, maxTreasure);
+		RpcSetTreasureAmount (treasureAmount);
+	}
+
+	[ClientRpc]
+	void RpcSetTreasureAmount (float amount){
+		treasureAmount = amount;
 	}
 
 	void OnTriggerEnter (Collider obj){
@@ -34,6 +43,7 @@ public class Treasure : NetworkBehaviour {
 				treasureAmount = 0;
 				// TODO player can only pick the amount it can carry. the rest will left behind
 				if (treasureAmount == 0) {
+					Treasure.treasureCount--;
 					Destroy (gameObject, 1);
 				}
 			}
