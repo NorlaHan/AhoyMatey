@@ -58,13 +58,13 @@ public class Player : NetworkBehaviour {
 		playerSpawnPoints = FindObjectsOfType<PlayerSpawnPoint> ();
 
 		for (int i = 0; i < playerSpawnPoints.Length; i++) {
-			Debug.Log ("Checking " + playerSpawnPoints [i].name + "...");
+			//Debug.Log ("Checking " + playerSpawnPoints [i].name + "...");
 			if (!playerSpawnPoints [i].GetComponentInChildren<Player>()) {
-				Debug.Log (playerSpawnPoints [i].name + " have no player.");
+				//Debug.Log (playerSpawnPoints [i].name + " have no player.");
 
 				gameObject.transform.SetParent (playerSpawnPoints [i].transform);
 				gameObject.name = "Player" + (i + 1);
-				Debug.Log ("Spawn " + name + " to " + playerSpawnPoints [i].name);
+				//Debug.Log ("Spawn " + name + " to " + playerSpawnPoints [i].name);
 
 				RpcPlayerSpawn (i);
 				isFull = false;
@@ -79,7 +79,7 @@ public class Player : NetworkBehaviour {
 
 	[ClientRpc]
 	void RpcPlayerSpawn (int i){
-		Debug.Log (name + ", ClientRpc called");
+		//Debug.Log (name + ", ClientRpc called");
 
 		// Set parent
 		playerSpawnPoints = FindObjectsOfType<PlayerSpawnPoint> ();
@@ -114,7 +114,7 @@ public class Player : NetworkBehaviour {
 		audioListener = GetComponentInChildren<AudioListener> ();
 		gameManager = GameObject.FindObjectOfType<GameManager> ();
 
-		Invoke ("InstantiatePlayerUI" , 0.1f);
+		Invoke ("InstantiatePlayerUI" , 0.2f);
 		//InstantiatePlayerUI ();
 	}
 
@@ -122,7 +122,19 @@ public class Player : NetworkBehaviour {
 	void InstantiatePlayerUI ()
 	{
 		uiPlayer = Instantiate (playerUIPrefab).GetComponentInChildren<UIPlayer> ();
-		uiPlayer.LinkUIToPlayer (this, playerBase.GetComponent<PlayerBase>());
+		TryToGetplayerBase ();
+	}
+
+	void TryToGetplayerBase(){
+		if (playerBase) {
+			uiPlayer.LinkUIToPlayer (this, playerBase.GetComponent<PlayerBase> ());
+		} else {
+			Debug.Log (name + "Can't find playerBase");
+			if (transform.parent.GetComponentInChildren<PlayerBase> ()) {
+				playerBase = transform.parent.GetComponentInChildren<PlayerBase> ().gameObject;
+			}
+			Invoke ("TryToGetplayerBase", 0.1f);
+		}
 	}
 
 	// Update is called once per frame
@@ -135,7 +147,7 @@ public class Player : NetworkBehaviour {
 			try {
 				if (!transform.parent && !isServer) {
 					transform.SetParent (GameObject.Find (parentName).transform);
-					Debug.Log (name+", missing parent. set parent to " + parentName);
+					//Debug.Log (name+", missing parent. set parent to " + parentName);
 				}
 				if (name != playerName) {
 					name = playerName;

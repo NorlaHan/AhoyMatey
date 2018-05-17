@@ -14,6 +14,7 @@ public class UIPlayer : MonoBehaviour {
 	public Slider healthBar;
 
 	// Call from player Rpc instantiate. faster than Start
+
 	public void LinkUIToPlayer(Player playerOnClient, PlayerBase playerBaseOnClient){
 		player = playerOnClient;
 		playerBase = playerBaseOnClient;
@@ -49,7 +50,7 @@ public class UIPlayer : MonoBehaviour {
 		}
 
 		// Rename if the name is not right
-		if (playerText.text != player.name) {
+		if (player && playerText.text != player.name) {
 			playerText.text = player.name;
 		}
 	}

@@ -31,7 +31,7 @@ public class PlayerTreasureStash : NetworkBehaviour {
 	public float TreasureStoreToBase (){
 		float treasureToStore = playerTreasureCarry;
 		playerTreasureCarry = 0;
-		Debug.Log ("Store treasure to base : "+ treasureToStore);
+		//Debug.Log ("Store treasure to base : "+ treasureToStore);
 		return treasureToStore;
 	}
 
@@ -50,7 +50,7 @@ public class PlayerTreasureStash : NetworkBehaviour {
 	// Send message to player
 	void OnChangeTreasureCarry (float treasure){
 		SendMessage ("ReceiveTreasureCarryChange",treasure);
-		Debug.Log (name + ", TreasureCarryChange");
+		//Debug.Log (name + ", TreasureCarryChange");
 	}
 		
 }

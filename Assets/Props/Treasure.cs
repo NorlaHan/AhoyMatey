@@ -7,6 +7,11 @@ public class Treasure : NetworkBehaviour {
 
 	public static int treasureCount;
 
+	public bool isDebugMode;
+
+	[SyncVar]
+	public string parentName;
+
 	[SyncVar]
 	public float treasureAmount;
 
@@ -15,21 +20,61 @@ public class Treasure : NetworkBehaviour {
 
 	void Start () {
 		Treasure.treasureCount++;
-		//if (!isServer) {return;}
-		CmdRollTreasureAmount ();
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
+		// [Warring] call on client
+		//if (isServer) {return;}
+		if (!isServer) {return;}
+		//if (hasAuthority) {
+			ServerRollTreasureAmount ();
+		//}
+		parentName = transform.parent.name;
 	}
 
-	[Command]
-	void CmdRollTreasureAmount (){
+//	public override void OnStartClient ()
+//	{
+//		base.OnStartClient ();
+//		//transform.SetPositionAndRotation(spawnTransform.position,spawnTransform.rotation);
+//		transform.SetParent (GameObject.Find("parentName").transform);
+//	}
+
+	// Roll the amout at start sever only
+	[Server]
+	public void ServerRollTreasureAmount (){
+		Debug.Log ("Roll Treasure Amount");
 		treasureAmount = Random.Range (minTreasure, maxTreasure);
+		//Invoke ("RpcSetTreasureAmount",1);
+		//if (!isServer) {return;}
 		RpcSetTreasureAmount (treasureAmount);
 	}
 
+	// Update is called once per frame
+	void Update () {
+		if (isDebugMode) {
+			Debug.Log (name + "isClient = " + isClient+", isServer = "+ isServer +", treasureAmount :" + treasureAmount);
+		}
+		if (!transform.parent) {
+			transform.SetParent (GameObject.Find(parentName).transform);
+		}
+		//CheckTreasureOnClient ();
+	}
+
+	// If the amount is 0, ask sever to sync.
+//	[Client]
+//	void CheckTreasureOnClient (){
+//		if (treasureAmount == 0 && hasAuthority) {
+//			// [Warning][Server/Client] trying to send command without authority
+//			// [Warring][client] trying to send command without authority
+//			CmdSyncTreasureAmount ();
+//		}
+//	}
+//
+//	// Sever recieved request, pass amount to client.
+//	[Command]
+//	void CmdSyncTreasureAmount (){
+//		RpcSetTreasureAmount (treasureAmount);
+//	}
+
+
+	// Client get the amount and sync wuth server.
 	[ClientRpc]
 	void RpcSetTreasureAmount (float amount){
 		treasureAmount = amount;
