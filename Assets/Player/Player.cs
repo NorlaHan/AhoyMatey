@@ -7,10 +7,11 @@ using UnityEngine.Networking;
 public class Player : NetworkBehaviour {
 
 	[SyncVar]
-	public bool isDebugMode = false , isGameEnd = false;
+	public bool isDebugMode = false , isGameEnd = false, isDead = false;
 
 
-	public GameObject playerUIPrefab ;
+	public GameObject playerUIPrefab , playerFoam;
+	public PlayerTreasureStash playerStash;
 	public GameManager gameManager;
 
 	[SyncVar]
@@ -31,7 +32,8 @@ public class Player : NetworkBehaviour {
 	private Camera playerCamera;
 	private AudioListener audioListener;
 	private UIPlayer uiPlayer;
-
+	private Animator animator;
+	private bool checkParent = false, checkName = false, checkBase = false, checking = true;
 
 	#region StartLocalPlayer
 	// This is trigger on player spawn on the client.
@@ -90,31 +92,58 @@ public class Player : NetworkBehaviour {
 		gameObject.transform.localPosition = Vector3.zero;
 		gameObject.name = "Player" + (i + 1);
 		playerName = name;
-
 		//Debug.Log ("Spawn " + name + " to " + playerSpawnPoints [i].name);
-
 		// Set base
-		playerBase = transform.parent.GetComponentInChildren<PlayerBase> ().gameObject;
-		playerBase.name = "Player" + (i + 1) + "Base";
-		playerBaseName = playerBase.name;
-		// Cast self to the UI on the client.
-		playerBase.GetComponentInChildren<PlayerBase> ().BaseLinkToPlayer (gameObject);
+		TryToLinkPlayerToBase (i);
 	}
 
-
+	void TryToLinkPlayerToBase(int i){
+		if (transform.parent.GetComponentInChildren<PlayerBase> ()) {
+			playerBase = transform.parent.GetComponentInChildren<PlayerBase> ().gameObject;
+			playerBase.name = "Player" + (i + 1) + "Base";
+			playerBaseName = playerBase.name;
+			// Cast self to the UI on the client.
+			playerBase.GetComponentInChildren<PlayerBase> ().BaseLinkToPlayer (gameObject);
+		} else {
+			Invoke ("TryToLinkPlayerToBase", 0.1f);
+		}
+	}
 
 	#endregion
 
 
 	// Use this for initialization
 	void Start () {
-		rigidBody = GetComponentInChildren<Rigidbody> ();
+		
+		// Get component in children
+		if (GetComponentInChildren<Rigidbody> ()) {
+			rigidBody = GetComponentInChildren<Rigidbody> ();
+		}else {Debug.Log (name + ", missing Rigidbody");}
+		if (GetComponentInChildren<Camera> ()) {
+			playerCamera = GetComponentInChildren<Camera> ();
+		}else {Debug.Log (name + ", missing Camera");}
+		if (GetComponentInChildren<AudioListener> ()) {
+			audioListener = GetComponentInChildren<AudioListener> ();
+		}else {Debug.Log (name + ", missing AudioListener");}
+		if (GetComponentInChildren<Animator> ()) {
+			animator = GetComponentInChildren<Animator> ();
+		} else {Debug.Log (name + ", missing Animator");}
+		if (GetComponentInChildren<PlayerFoam> ().gameObject) {
+			playerFoam = GetComponentInChildren<PlayerFoam> ().gameObject;
+		}else {Debug.Log (name + ", missing PlayerFoam");}
+		if (GetComponent<PlayerTreasureStash> ()) {
+			playerStash = GetComponent<PlayerTreasureStash> ();
+		} else {Debug.Log (name + ", missing PlayerTreasureStash");}
 
-		playerCamera = GetComponentInChildren<Camera> ();
-		audioListener = GetComponentInChildren<AudioListener> ();
-		gameManager = GameObject.FindObjectOfType<GameManager> ();
 
-		Invoke ("InstantiatePlayerUI" , 0.2f);
+		// Find GameObject
+		if (GameObject.FindObjectOfType<GameManager> ()) {
+			gameManager = GameObject.FindObjectOfType<GameManager> ();
+		} else {Debug.Log (name + ", missing GameManager");}
+
+		if (isLocalPlayer) {
+			Invoke ("InstantiatePlayerUI" , 0.2f);
+		}
 		//InstantiatePlayerUI ();
 	}
 
@@ -122,10 +151,10 @@ public class Player : NetworkBehaviour {
 	void InstantiatePlayerUI ()
 	{
 		uiPlayer = Instantiate (playerUIPrefab).GetComponentInChildren<UIPlayer> ();
-		TryToGetplayerBase ();
+		TryToLinkPlayerToUI ();
 	}
 
-	void TryToGetplayerBase(){
+	void TryToLinkPlayerToUI(){
 		if (playerBase) {
 			uiPlayer.LinkUIToPlayer (this, playerBase.GetComponent<PlayerBase> ());
 		} else {
@@ -138,29 +167,61 @@ public class Player : NetworkBehaviour {
 	}
 
 	// Update is called once per frame
-	void Update () {
-		if (isGameEnd) {
-			return;
-		}
-		// Not local player will stop here.
-		if (!isLocalPlayer) {
+
+	public override void OnStartClient ()
+	{
+		base.OnStartClient ();
+		CheckOnStartClient ();
+	}
+
+	void CheckOnStartClient () {
+		if (!isLocalPlayer && checking) {
 			try {
-				if (!transform.parent && !isServer) {
+				if (!checkParent && !transform.parent && !isServer) {
 					transform.SetParent (GameObject.Find (parentName).transform);
 					//Debug.Log (name+", missing parent. set parent to " + parentName);
 				}
-				if (name != playerName) {
+				else {
+					checkParent = true;
+				}
+				if (!checkName && name != playerName) {
 					name = playerName;
 				}
-				if (playerBase.name != playerBaseName) {
+				else {
+					checkName = true;
+				}
+				if (!checkBase && playerBase.name != playerBaseName) {
 					playerBase.name = playerBaseName;
 				}
-			} catch{
+				else {
+					checkBase = true;
+				}
+				if (checkBase && checkName && checkParent) {
+					Debug.Log(name + ", Check complete!");
+					checking = false;
+				} else {
+					Debug.Log(name + ", checkBase = " +checkBase + ", checkName = "+checkName+", checkParent = "+checkParent);
+					Invoke("CheckOnStartClient",0.1f);
+				} 
+			}
+			catch {
 				Debug.Log ("Something happen when new client join the game.");
 			}
+		}
+	}
 
+	void Update () {
+		// Cut off control when game ends.
+		if (isGameEnd || isDead) {
 			return;
 		}
+		// Not local player will stop here.
+		CheckOnStartClient ();
+
+		if (!isLocalPlayer) {
+			return;
+		}
+
 		if (CrossPlatformInputManager.GetButton ("Horizontal")) {
 			//playerPos.x += CrossPlatformInputManager.GetAxis ("Horizontal");
 			vx = CrossPlatformInputManager.GetAxis ("Horizontal");
@@ -183,6 +244,14 @@ public class Player : NetworkBehaviour {
 		if (rigidBody.velocity.magnitude < speed) {
 			rigidBody.velocity += new Vector3 (vx, 0 , vz).normalized;
 			BroadcastMessage ("RotateToForward", new Vector3 (vx, 0, vz));
+		}
+
+		if (rigidBody.velocity != Vector3.zero) {
+			animator.SetBool ("isMoving", true);
+			Debug.Log (name + " is Moving");
+		} else {
+			animator.SetBool ("isMoving", false);
+			Debug.Log (name + " Stop");
 		}
 
 		// disable any other cameras other than the player's.
@@ -216,6 +285,10 @@ public class Player : NetworkBehaviour {
 		}
 	}
 
+
+
+
+	#region UI related region
 	public void DestroyUnusedUI (){
 		if (uiPlayer) {
 			uiPlayer.SelfDestruct ();
@@ -267,6 +340,30 @@ public class Player : NetworkBehaviour {
 			uiPlayer.UIUpdatePlayerHealth (playerHealthPercentage);
 		}
 
+	}
+	#endregion
+
+	[ClientRpc]
+	void RpcOnUnitDeath (){
+		isDead = true;
+		playerFoam.SetActive(false);
+		//playerStash.SetActive (false);
+		animator.SetBool ("isDead", true);
+		Debug.Log ("Player is dead.");
+		//Invoke ("RpcOnUnitRespawn",10f);
+	}
+
+	[ClientRpc]
+	void RpcOnUnitRespawn (){
+		//if (isLocalPlayer) {
+		Vector3 position = transform.position;	
+		transform.localPosition = Vector3.zero;
+		playerStash.CmdSpawnTreasureLoot (position);
+		animator.SetBool ("isDead", false);
+		playerFoam.SetActive(true);
+		isDead = false;
+			//playerStash.SetActive (true);
+		//}
 	}
 
 	public bool IsLocalPlayer (){

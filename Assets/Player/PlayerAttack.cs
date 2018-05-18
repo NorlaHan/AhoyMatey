@@ -38,7 +38,8 @@ public class PlayerAttack : MonoBehaviour {
 	void OnTriggerStay(Collider obj){
 			//Debug.Log ("something trigger, " + obj.name);
 		GameObject target = obj.gameObject;
-		if (target.tag == "Player") {
+		Player player = obj.GetComponentInParent<Player> ();
+		if (target.tag == "Player" && !player.isDead) {
 			Vector3 fireVector;
 			GameObject FiredCannon;
 

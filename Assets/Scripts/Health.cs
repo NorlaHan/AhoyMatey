@@ -5,6 +5,9 @@ using UnityEngine.Networking;
 
 public class Health : NetworkBehaviour {
 
+	public enum UnitType {Player, Mob, Boss};
+	public UnitType type;
+
 	public GameObject lastAttacker;
 	public float fullHealth = 100f;
 	public bool destroyOnDeath = false;
@@ -14,19 +17,22 @@ public class Health : NetworkBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		OnChangeHealth (currentHealth);
-		if (!isServer) {return;}
-		CmdFullHealth ();
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
+		if (type == UnitType.Player) {
+			OnChangeHealth (currentHealth);
+			if (!isServer) {return;}
+			CmdFullHealth ();
+		}
+		// Add other types of units.
 	}
 
 	[Command]
 	void CmdFullHealth (){
 		currentHealth = fullHealth;
+	}
+
+	// Update is called once per frame
+	void Update () {
+		
 	}
 		
 	public void OnTakeDamage (float damage, GameObject theAttacker){
@@ -36,24 +42,27 @@ public class Health : NetworkBehaviour {
 		lastAttacker = theAttacker;
 		currentHealth -= damage;
 		if (currentHealth <= 0) {
+			if (type == UnitType.Player) {
+				if (destroyOnDeath) {
+					Destroy (gameObject);
+				} else {
+					currentHealth = fullHealth;
+					Debug.LogWarning (name + ", is dead, but revive!");
+				}
+				PlayerTreasureStash treasureStash =  GetComponentInChildren<PlayerTreasureStash> ();
+				// Take the treasure automatically.
+				//			float lootedTreasure = treasureStash.TreasureBeenLooted ();
+				//			lastAttacker.GetComponentInChildren<PlayerTreasureStash> ().TreasureLoot (lootedTreasure);
 
-			if (destroyOnDeath) {
-				Destroy (gameObject);
-			} else {
-				currentHealth = fullHealth;
-				Debug.LogWarning (name + ", is dead, but revive!");
+				// Treasure loot spawn at spot;
+				//treasureStash.CmdSpawnTreasureLoot ();
+
+				//RpcOnUnitRespawn ();
+				//OnDeath ();
 			}
-			PlayerTreasureStash treasureStash =  GetComponentInChildren<PlayerTreasureStash> ();
+			// Add other types of units.
 
-			// Take the treasure automatically.
-//			float lootedTreasure = treasureStash.TreasureBeenLooted ();
-//			lastAttacker.GetComponentInChildren<PlayerTreasureStash> ().TreasureLoot (lootedTreasure);
-
-			// Treasure loot spawn at spot;
-			treasureStash.CmdSpawnTreasureLoot ();
-
-			RpcRespawn ();
-			//OnDeath ();
+			SendMessage ("RpcOnUnitDeath");
 		}
 	}
 
@@ -62,13 +71,14 @@ public class Health : NetworkBehaviour {
 //		
 //	}
 
-	[ClientRpc]
-	void RpcRespawn (){
-		if (isLocalPlayer) {
-			transform.localPosition = Vector3.zero;
-		}
-	}
+//	[ClientRpc]
+//	void RpcOnUnitRespawn (){
+//		if (isLocalPlayer) {
+//			transform.localPosition = Vector3.zero;
+//		}
+//	}
 
+	// Hook to currentHealth.
 	public void OnChangeHealth(float crtHealth){
 		SendMessage ("UpdatePlayerHealth", crtHealth / fullHealth);
 	}

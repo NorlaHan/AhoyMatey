@@ -19,6 +19,7 @@ public class PlayerTreasureStash : NetworkBehaviour {
 	void Start () {
 		// Start with 100 treasure.
 		playerTreasureCarry = startTreasure;
+		player = GetComponent<Player> ();
 	}
 	
 	// Update is called once per frame
@@ -45,10 +46,11 @@ public class PlayerTreasureStash : NetworkBehaviour {
 	}
 
 	[Command]
-	public void CmdSpawnTreasureLoot (){
-		GameObject treasureLoot = Instantiate (treasureLootPrefab, transform.position, transform.rotation);
+	public void CmdSpawnTreasureLoot (Vector3 position){
+		GameObject treasureLoot = Instantiate (treasureLootPrefab, position, Quaternion.identity);
 		NetworkServer.Spawn (treasureLoot);
-		treasureLoot.GetComponent<Treasure>().TreasureLootFromPlayer(TreasureBeenLooted ());
+		treasureLoot.GetComponent<Treasure>().TreasureLootFromPlayer(TreasureBeenLooted () /* , player*/ );
+		Debug.Log ("CmdSpawnTreasureLoot ()");
 		RpcSpawnTreasureLoot (treasureLoot);
 	}
 

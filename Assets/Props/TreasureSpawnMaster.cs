@@ -50,7 +50,7 @@ public class TreasureSpawnMaster : NetworkBehaviour {
 	{
 		base.OnStartClient ();
 		//ClientScene.RegisterPrefab (treasurePrefab);
-		Debug.Log ("ClientScene.RegisterPrefab (treasurePrefab)");
+		//Debug.Log ("ClientScene.RegisterPrefab (treasurePrefab)");
 		if (isServer) {return;}
 		OnCheckSpawnedTreasure ();
 	}
@@ -97,7 +97,7 @@ public class TreasureSpawnMaster : NetworkBehaviour {
 				GameObject treasure = treasureSpawnPoints [i].transform.GetChild (0).gameObject;
 				RpcCheckSpawnedTreasure (i, treasure);
 			} else {
-				Debug.Log ("all spawn points has no child");
+				Debug.Log ("Treasure spawn point has no child");
 			}
 		}
 	}
