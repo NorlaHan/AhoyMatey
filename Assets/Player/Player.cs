@@ -9,7 +9,7 @@ public class Player : NetworkBehaviour {
 	[SyncVar]
 	public bool isDebugMode = false , isGameEnd = false;
 
-	public PlayerSpawnPoint[] playerSpawnPoints;
+
 	public GameObject playerUIPrefab ;
 	public GameManager gameManager;
 
@@ -26,7 +26,7 @@ public class Player : NetworkBehaviour {
 	// public Vector3 playerPos, playerRot;
 	public float vx , vz, vy, speed = 5f, jumpSpeed = 6f; 
 
-
+	private PlayerSpawnPoint[] playerSpawnPoints;
 	private Rigidbody rigidBody;
 	private Camera playerCamera;
 	private AudioListener audioListener;

@@ -6,6 +6,7 @@ using UnityEngine.Networking;
 public class PlayerTreasureStash : NetworkBehaviour {
 
 	public bool isDebugMode = false;
+	public GameObject treasureLootPrefab;
 
 	[SyncVar(hook = "OnChangeTreasureCarry")]
 	public float playerTreasureCarry;
@@ -41,6 +42,19 @@ public class PlayerTreasureStash : NetworkBehaviour {
 		playerTreasureCarry = 0;
 		Debug.Log ("Store treasure to base : "+ treasureLooted);
 		return treasureLooted;
+	}
+
+	[Command]
+	public void CmdSpawnTreasureLoot (){
+		GameObject treasureLoot = Instantiate (treasureLootPrefab, transform.position, transform.rotation);
+		NetworkServer.Spawn (treasureLoot);
+		treasureLoot.GetComponent<Treasure>().TreasureLootFromPlayer(TreasureBeenLooted ());
+		RpcSpawnTreasureLoot (treasureLoot);
+	}
+
+	[ClientRpc]
+	void RpcSpawnTreasureLoot (GameObject treasureLoot) {
+		Debug.Log ("RpcSpawnTreasureLoot");
 	}
 
 	public void TreasureLoot (float lootedTreasure){

@@ -43,8 +43,14 @@ public class Health : NetworkBehaviour {
 				currentHealth = fullHealth;
 				Debug.LogWarning (name + ", is dead, but revive!");
 			}
-			float lootedTreasure = GetComponentInChildren<PlayerTreasureStash> ().TreasureBeenLooted ();
-			lastAttacker.GetComponentInChildren<PlayerTreasureStash> ().TreasureLoot (lootedTreasure);
+			PlayerTreasureStash treasureStash =  GetComponentInChildren<PlayerTreasureStash> ();
+
+			// Take the treasure automatically.
+//			float lootedTreasure = treasureStash.TreasureBeenLooted ();
+//			lastAttacker.GetComponentInChildren<PlayerTreasureStash> ().TreasureLoot (lootedTreasure);
+
+			// Treasure loot spawn at spot;
+			treasureStash.CmdSpawnTreasureLoot ();
 
 			RpcRespawn ();
 			//OnDeath ();

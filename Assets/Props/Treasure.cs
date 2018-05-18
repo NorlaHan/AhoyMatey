@@ -7,7 +7,7 @@ public class Treasure : NetworkBehaviour {
 
 	public static int treasureCount;
 
-	public bool isDebugMode;
+	public bool isDebugMode= false , isLoot = false , isTaken = false;
 
 	[SyncVar]
 	public string parentName;
@@ -19,14 +19,19 @@ public class Treasure : NetworkBehaviour {
 	// Use this for initialization
 
 	void Start () {
-		Treasure.treasureCount++;
-		// [Warring] call on client
-		//if (isServer) {return;}
-		if (!isServer) {return;}
-		//if (hasAuthority) {
+		if (isServer && !isLoot) {
+			Treasure.treasureCount++;
+			if (!isServer) {return;}
+			//if (hasAuthority) {
 			ServerRollTreasureAmount ();
-		//}
-		parentName = transform.parent.name;
+			//}
+			parentName = transform.parent.name;
+		}
+
+	}
+
+	public void TreasureLootFromPlayer(float treasureLoot){
+		treasureAmount = treasureLoot;
 	}
 
 //	public override void OnStartClient ()
@@ -88,11 +93,14 @@ public class Treasure : NetworkBehaviour {
 				treasureAmount = 0;
 				// TODO player can only pick the amount it can carry. the rest will left behind
 				if (treasureAmount == 0) {
-					Treasure.treasureCount--;
+					if (isServer && !isLoot && !isTaken) {
+						isTaken = true;
+						Treasure.treasureCount--;
+						Debug.Log (name + ", Treasure.treasureCount--");
+					}
 					Destroy (gameObject, 1);
 				}
 			}
 		}
-
 	}
 }
