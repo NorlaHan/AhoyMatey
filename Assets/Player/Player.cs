@@ -33,7 +33,7 @@ public class Player : NetworkBehaviour {
 	private AudioListener audioListener;
 	private UIPlayer uiPlayer;
 	private Animator animator;
-	private bool checkParent = false, checkName = false, checkBase = false, checking = true;
+	public bool checkParent = false, checkName = false, checkBase = false, checking = true;
 
 	#region StartLocalPlayer
 	// This is trigger on player spawn on the client.
@@ -246,13 +246,13 @@ public class Player : NetworkBehaviour {
 			BroadcastMessage ("RotateToForward", new Vector3 (vx, 0, vz));
 		}
 
-		if (rigidBody.velocity != Vector3.zero) {
-			animator.SetBool ("isMoving", true);
-			Debug.Log (name + " is Moving");
-		} else {
-			animator.SetBool ("isMoving", false);
-			Debug.Log (name + " Stop");
-		}
+//		if (rigidBody.velocity != Vector3.zero) {
+//			animator.SetBool ("isMoving", true);
+//			Debug.Log (name + " is Moving");
+//		} else {
+//			animator.SetBool ("isMoving", false);
+//			Debug.Log (name + " Stop");
+//		}
 
 		// disable any other cameras other than the player's.
 		if (GameObject.FindObjectsOfType<Camera> ().Length>1) {
@@ -358,10 +358,10 @@ public class Player : NetworkBehaviour {
 		//if (isLocalPlayer) {
 		Vector3 position = transform.position;	
 		transform.localPosition = Vector3.zero;
-		playerStash.CmdSpawnTreasureLoot (position);
 		animator.SetBool ("isDead", false);
 		playerFoam.SetActive(true);
 		isDead = false;
+		playerStash.CmdSpawnTreasureLoot (position);
 			//playerStash.SetActive (true);
 		//}
 	}

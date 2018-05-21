@@ -11,6 +11,7 @@ public class PlayerAttack : MonoBehaviour {
 
 	private SpawnPointIndicator spawnPos;
 	private GameObject playerProjectiles;
+	private Player playerSelf;
 	private float fireCount = 0;
 
 	// Use this for initialization
@@ -18,14 +19,18 @@ public class PlayerAttack : MonoBehaviour {
 		if (GetComponentInChildren<SpawnPointIndicator> ()) {
 			spawnPos = GetComponentInChildren<SpawnPointIndicator> ();
 		} else {Debug.LogWarning (name + ", missing SpawnPointIndicator");}
-
+		// Use an empty Game Object to hierarchise the projectiles fired
 		if (GameObject.Find ("PlayerProjectiles")) {
 			playerProjectiles = GameObject.Find ("PlayerProjectiles");
 		}else {
 			Debug.LogWarning (name + ", missing PlayerProjectiles. Auto generate.");
 			playerProjectiles = new GameObject ("playerProjectiles");
 		}
+		if (GetComponentInParent<Player>()) {
+			playerSelf = GetComponentInParent<Player> ();
+		}else {Debug.LogWarning (name + ", missing Self Player");}
 
+	
 	}
 	
 	// Update is called once per frame
@@ -39,7 +44,7 @@ public class PlayerAttack : MonoBehaviour {
 			//Debug.Log ("something trigger, " + obj.name);
 		GameObject target = obj.gameObject;
 		Player player = obj.GetComponentInParent<Player> ();
-		if (target.tag == "Player" && !player.isDead) {
+		if (!playerSelf.isDead && target.tag == "Player" && !player.isDead) {
 			Vector3 fireVector;
 			GameObject FiredCannon;
 

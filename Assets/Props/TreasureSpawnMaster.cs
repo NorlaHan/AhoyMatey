@@ -104,20 +104,10 @@ public class TreasureSpawnMaster : NetworkBehaviour {
 
 	[ClientRpc]
 	void RpcCheckSpawnedTreasure (int i ,GameObject treasure){
-//		if (hasAuthority) {
-//			treasureSpawnPoints [i].GetComponent<TreasureSpawnPoint> ().ClientStartFakeSpawn ();
-//			Debug.Log ("RpcCheckSpawnedTreasure, i =" + i);
-//			//treasure.transform.SetParent (treasureSpawnPoints [i].transform);
-//		} else {
-//			Debug.LogWarning ("Not Client");
-//		}
-		//if (!hasAuthority) {
 		if (treasureSpawnPoints [i].transform.childCount == 0) {
 			treasure.transform.SetParent(treasureSpawnPoints [i].transform);
 			Debug.Log ("Set treasure to spawn point on client");
 		}
-			
-		//}
 	}
 
 	// Update is called once per frame

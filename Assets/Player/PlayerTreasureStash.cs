@@ -47,9 +47,15 @@ public class PlayerTreasureStash : NetworkBehaviour {
 
 	[Command]
 	public void CmdSpawnTreasureLoot (Vector3 position){
+		float treasureForLoot = TreasureBeenLooted ();
+		// Dnn't spawn treasure if there're nothing to loot.
+		if (treasureForLoot<=0) {
+			Debug.Log (name + ", treasureForLoot = " + treasureForLoot);
+			return;
+		}
 		GameObject treasureLoot = Instantiate (treasureLootPrefab, position, Quaternion.identity);
 		NetworkServer.Spawn (treasureLoot);
-		treasureLoot.GetComponent<Treasure>().TreasureLootFromPlayer(TreasureBeenLooted () /* , player*/ );
+		treasureLoot.GetComponent<Treasure>().TreasureLootFromPlayer(treasureForLoot /* , player*/ );
 		Debug.Log ("CmdSpawnTreasureLoot ()");
 		RpcSpawnTreasureLoot (treasureLoot);
 	}

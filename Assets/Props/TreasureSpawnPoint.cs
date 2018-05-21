@@ -5,9 +5,6 @@ using UnityEngine;
 
 public class TreasureSpawnPoint : MonoBehaviour {
 
-
-	public GameObject SpawnedTreasure;
-
 	public bool canSpawn = true;
 
 	public bool isDebugMode = false;
@@ -75,10 +72,5 @@ public class TreasureSpawnPoint : MonoBehaviour {
 			canSpawn = true;
 		}
 	}
-
-	public void ClientStartFakeSpawn (){
-		GameObject treasure = Instantiate(SpawnedTreasure,transform.position,transform.rotation);
-		treasure.transform.SetParent(transform);
-		Debug.Log ("ClientStartFakeSpawn ()");
-	}
+		
 }

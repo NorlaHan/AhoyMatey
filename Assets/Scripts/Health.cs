@@ -36,9 +36,8 @@ public class Health : NetworkBehaviour {
 	}
 		
 	public void OnTakeDamage (float damage, GameObject theAttacker){
-		if (!isServer) {
-			return;
-		}
+		// Only server handle the health.
+		if (!isServer) {return;}
 		lastAttacker = theAttacker;
 		currentHealth -= damage;
 		if (currentHealth <= 0) {
@@ -71,12 +70,12 @@ public class Health : NetworkBehaviour {
 //		
 //	}
 
-//	[ClientRpc]
-//	void RpcOnUnitRespawn (){
-//		if (isLocalPlayer) {
-//			transform.localPosition = Vector3.zero;
-//		}
-//	}
+	public void OnGetRepair (float repair){
+		// Only server handle the health.
+		if (!isServer) {return;}
+		Mathf.Clamp(currentHealth += repair, 0 , fullHealth);
+	}
+
 
 	// Hook to currentHealth.
 	public void OnChangeHealth(float crtHealth){
