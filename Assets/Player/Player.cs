@@ -11,7 +11,7 @@ public class Player : NetworkBehaviour {
 
 	[SyncVar /*(hook = "OnDeathSpawnLoot")*/]
 	public bool isDead = false;
-	[SyncVar(hook = "OnShowFoam") ]
+	[SyncVar /*(hook = "OnShowFoam")*/ ]
 	public bool showFoam = true;
 
 
@@ -342,9 +342,10 @@ public class Player : NetworkBehaviour {
 	}
 
 	[Client]
-	void UpdatePlayerHealth(float playerHealthPercentage){
+	public void UpdatePlayerHealth(float playerHealthPercentage){
 		if (uiPlayer) {
 			uiPlayer.UIUpdatePlayerHealth (playerHealthPercentage);
+			Debug.Log ("UpdatePlayerHealth = " + playerHealthPercentage);
 		}
 
 	}
@@ -354,7 +355,8 @@ public class Player : NetworkBehaviour {
 	void RpcOnUnitDeath (){
 		if (hasAuthority) {
 			isDead = true;
-			showFoam = false;
+			playerFoam.SetActive (false);
+			//showFoam = false;
 			if (!animator) {animator = GetComponent<Animator> ();}
 			animator.SetBool ("isDead", true);
 			Debug.Log ("Player is dead.");
@@ -368,16 +370,17 @@ public class Player : NetworkBehaviour {
 			transform.localPosition = Vector3.zero;
 			if (!animator) {animator = GetComponent<Animator> ();}
 			animator.SetBool ("isDead", false);
-			showFoam = true;
+			playerFoam.SetActive (true);
+			//showFoam = true;
 			isDead = false;
+			SendMessage ("OnRespawnHealth");
 			playerStash.CmdSpawnTreasureLoot (position);
-
 		}
 	}
 
-	void OnShowFoam (bool showfoam){
-		playerFoam.SetActive (showfoam);
-	}
+//	void OnShowFoam (bool showfoam){
+//		playerFoam.SetActive (showfoam);
+//	}
 
 	public bool IsLocalPlayer (){
 		return isLocalPlayer;

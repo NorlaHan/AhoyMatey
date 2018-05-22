@@ -12,7 +12,7 @@ public class Health : NetworkBehaviour {
 	public float fullHealth = 100f;
 	public bool destroyOnDeath = false;
 
-	[SyncVar(hook = "OnChangeHealth")]	// Whenever current health  changed, call OnChangeHealth method.
+	[SyncVar /* (hook = "OnChangeHealth")*/ ]	// Whenever current health  changed, call OnChangeHealth method.
 	public float currentHealth;
 
 	// Use this for initialization
@@ -43,13 +43,13 @@ public class Health : NetworkBehaviour {
 		}
 		lastAttacker = theAttacker;
 		currentHealth -= damage;
+		OnChangeHealth (currentHealth);
 		if (currentHealth <= 0) {
 			if (type == UnitType.Player) {
 				if (destroyOnDeath) {
 					Destroy (gameObject);
 				} else {
-					currentHealth = fullHealth;
-					Debug.LogWarning (name + ", is dead, but revive!");
+					Debug.LogWarning (name + ", is dead.");
 				}
 				PlayerTreasureStash treasureStash =  GetComponentInChildren<PlayerTreasureStash> ();
 				// Take the treasure automatically.
@@ -82,12 +82,14 @@ public class Health : NetworkBehaviour {
 
 	// Hook to currentHealth.
 	public void OnChangeHealth(float crtHealth){
+		//GetComponent<Player> ().UpdatePlayerHealth (crtHealth / fullHealth);
 		SendMessage ("UpdatePlayerHealth", crtHealth / fullHealth);
+		Debug.Log (name + ", OnChangeHealth");
 	}
 
-//	void OnDeath(){
-//		destroyOnDeath = true;
-//		Debug.LogWarning (name + ", is dead.");
-//		//Destroy (gameObject);
-//	}
+	void OnRespawnHealth (){
+		currentHealth = fullHealth;
+		OnChangeHealth (currentHealth);
+		Debug.LogWarning (name + ", is revive!");
+	}
 }
