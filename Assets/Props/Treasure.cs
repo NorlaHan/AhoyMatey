@@ -9,16 +9,21 @@ public class Treasure : NetworkBehaviour {
 
 	public bool isDebugMode= false , isLoot = false , isTaken = false;
 
+	public float countTime = 0, protectedTime = 5f;
+
 	[SyncVar]
 	public string parentName;
 
 	[SyncVar]
 	public float treasureAmount;
 
+	[SyncVar]
+	public GameObject PlayerBeenLooted;
+
 	public int minTreasure = 50, maxTreasure = 201;
 	// Use this for initialization
 
-	//private Player PlayerBeenLooted;
+
 
 	void Start () {
 		if (isServer && !isLoot) {
@@ -32,9 +37,9 @@ public class Treasure : NetworkBehaviour {
 
 	}
 
-	public void TreasureLootFromPlayer(float treasureLoot /*, Player victim*/){
+	public void TreasureLootFromPlayer(float treasureLoot , GameObject victim){
 		treasureAmount = treasureLoot;
-		//PlayerBeenLooted = victim;
+		PlayerBeenLooted = victim;
 	}
 
 //	public override void OnStartClient ()
@@ -61,6 +66,13 @@ public class Treasure : NetworkBehaviour {
 		}
 		if (!transform.parent && !isLoot) {
 			transform.SetParent (GameObject.Find(parentName).transform);
+		}
+		if (isLoot && PlayerBeenLooted) {
+			countTime += Time.deltaTime;
+			if (countTime >= protectedTime) {
+				PlayerBeenLooted = null;
+				countTime = 0;
+			}
 		}
 		//CheckTreasureOnClient ();
 	}
@@ -90,26 +102,23 @@ public class Treasure : NetworkBehaviour {
 
 	void OnTriggerEnter (Collider obj){
 		if (obj.tag == "PlayerStash") {
-//			if (isLoot && obj.GetComponentInParent<Player> () == PlayerBeenLooted) {
-//				
-//				return;
-//			} else {
-			//GameObject target = obj.GetComponentInParent<PlayerTreasureStash>() transform.parent.transform.parent.gameObject;
+			if (isLoot && obj.GetComponentInParent<Player> ().gameObject == PlayerBeenLooted) {
+				return;
+			}
 			if (obj.GetComponentInParent<PlayerTreasureStash>()) {
 				obj.GetComponentInParent<PlayerTreasureStash>().TreasureLoot (treasureAmount);
 				treasureAmount = 0;
 					// TODO player can only pick the amount it can carry. the rest will left behind
-					if (treasureAmount == 0) {
-						if (isServer && !isLoot && !isTaken) {
-							isTaken = true;
-							Treasure.treasureCount--;
-							Debug.Log (name + ", Treasure.treasureCount--");
-						}
-						Debug.Log (name + ", Been comsumed");
-						Destroy (gameObject, 1);
+				if (treasureAmount == 0) {
+					if (isServer && !isLoot && !isTaken) {
+						isTaken = true;
+						Treasure.treasureCount--;
+						Debug.Log (name + ", Treasure.treasureCount--");
 					}
+					Debug.Log (name + ", Been comsumed");
+					Destroy (gameObject, 1);
 				}
-			//}
+			}
 		}
 	}
 }

@@ -11,7 +11,8 @@ public class PlayerTreasureStash : NetworkBehaviour {
 	[SyncVar(hook = "OnChangeTreasureCarry")]
 	public float playerTreasureCarry;
 
-	public Player player;
+	[SyncVar]
+	public GameObject player;
 
 	public float lootPenalty = 4f, startTreasure = 0;
 
@@ -29,7 +30,7 @@ public class PlayerTreasureStash : NetworkBehaviour {
 	void Start () {
 		// Start with 100 treasure.
 		playerTreasureCarry = startTreasure;
-		player = GetComponent<Player> ();
+		player = GetComponent<Player> ().gameObject;
 	}
 	
 	// Update is called once per frame
@@ -59,18 +60,18 @@ public class PlayerTreasureStash : NetworkBehaviour {
 	public void CmdSpawnTreasureLoot (Vector3 position){
 		treasureForLoot = TreasureBeenLooted ();
 		deathPosition = position;
-		Invoke ("DelaySpawnTreasureLoot", 0.5f);
+		Invoke ("DelaySpawnLoot", 0.5f);
 	}
 
-	void DelaySpawnTreasureLoot (){
-		// Dnn't spawn treasure if there're nothing to loot.
+	void DelaySpawnLoot (){
+		// Don't spawn treasure if there're nothing to loot.
 		if (treasureForLoot<=0) {
 			Debug.Log (name + ", treasureForLoot = " + treasureForLoot);
 			return;
 		}
 		GameObject treasureLoot = Instantiate (treasureLootPrefab, deathPosition, Quaternion.identity);
 		NetworkServer.Spawn (treasureLoot);
-		treasureLoot.GetComponent<Treasure>().TreasureLootFromPlayer(treasureForLoot /* , player*/ );
+		treasureLoot.GetComponent<Treasure>().TreasureLootFromPlayer(treasureForLoot  , player );
 		Debug.Log ("CmdSpawnTreasureLoot ()");
 		//RpcSpawnTreasureLoot (treasureLoot, deathPosition);
 	}

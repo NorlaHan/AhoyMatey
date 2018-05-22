@@ -10,7 +10,7 @@ public class PlayerAttack : MonoBehaviour {
 
 
 	private SpawnPointIndicator spawnPos;
-	private GameObject playerProjectiles;
+	private Transform playerProjectiles;
 	private Player playerSelf;
 	private float fireCount = 0;
 
@@ -21,10 +21,10 @@ public class PlayerAttack : MonoBehaviour {
 		} else {Debug.LogWarning (name + ", missing SpawnPointIndicator");}
 		// Use an empty Game Object to hierarchise the projectiles fired
 		if (GameObject.Find ("PlayerProjectiles")) {
-			playerProjectiles = GameObject.Find ("PlayerProjectiles");
+			playerProjectiles = GameObject.Find ("PlayerProjectiles").transform;
 		}else {
 			Debug.LogWarning (name + ", missing PlayerProjectiles. Auto generate.");
-			playerProjectiles = new GameObject ("playerProjectiles");
+			playerProjectiles = new GameObject ("playerProjectiles").transform;
 		}
 		if (GetComponentInParent<Player>()) {
 			playerSelf = GetComponentInParent<Player> ();
@@ -59,13 +59,13 @@ public class PlayerAttack : MonoBehaviour {
 				fireVector = (currentTarget.transform.position - spawnPos.transform.position).normalized;
 				// put all cannon under playerProjectiles
 				FiredCannon = Instantiate (cannonBall, spawnPos.transform.position, Quaternion.identity);
-				FiredCannon.transform.SetParent (playerProjectiles.transform);
+				FiredCannon.transform.SetParent (playerProjectiles);
 				
 				// who is the attacker
-				GameObject attacker = transform.parent.transform.parent.gameObject;
-				FiredCannon.GetComponent<CannonBall> ().SetAttacker (attacker);
+				GameObject attacker = GetComponentInParent<Player>().gameObject;
+				//FiredCannon.GetComponent<CannonBall> ().SetAttacker (attacker);
 				
-				FiredCannon.GetComponent<CannonBall> ().CannonFire (fireVector);
+				FiredCannon.GetComponent<CannonBall> ().CannonFire (attacker,playerProjectiles, fireVector);
 			}
 		}
 	}

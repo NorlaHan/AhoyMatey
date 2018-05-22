@@ -132,12 +132,12 @@ public class Player : NetworkBehaviour {
 			audioListener = GetComponentInChildren<AudioListener> ();
 		}else {Debug.Log (name + ", missing AudioListener");}
 		if (GetComponentInChildren<Animator> ()) {
-			animator = GetComponentInChildren<Animator> ();
+			animator = GetComponent<Animator> ();
 			//NetworkAnimator
 		} else {Debug.Log (name + ", missing Animator");}
-		if (GetComponentInChildren<PlayerFoam> ().gameObject) {
-			playerFoam = GetComponentInChildren<PlayerFoam> ().gameObject;
-		}else {Debug.Log (name + ", missing PlayerFoam");}
+//		if (GetComponentInChildren<PlayerFoam> ().gameObject) {
+//			playerFoam = GetComponentInChildren<PlayerFoam> ().gameObject;
+//		}else {Debug.Log (name + ", missing PlayerFoam");}
 		if (GetComponent<PlayerTreasureStash> ()) {
 			playerStash = GetComponent<PlayerTreasureStash> ();
 		} else {Debug.Log (name + ", missing PlayerTreasureStash");}
@@ -355,6 +355,7 @@ public class Player : NetworkBehaviour {
 		if (hasAuthority) {
 			isDead = true;
 			showFoam = false;
+			if (!animator) {animator = GetComponent<Animator> ();}
 			animator.SetBool ("isDead", true);
 			Debug.Log ("Player is dead.");
 		}
@@ -365,6 +366,7 @@ public class Player : NetworkBehaviour {
 		if (hasAuthority) {
 			Vector3 position = transform.position;
 			transform.localPosition = Vector3.zero;
+			if (!animator) {animator = GetComponent<Animator> ();}
 			animator.SetBool ("isDead", false);
 			showFoam = true;
 			isDead = false;

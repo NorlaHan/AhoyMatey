@@ -10,6 +10,7 @@ public class CannonBall : NetworkBehaviour {
 	public GameObject attacker, explosionFX;
 	public Vector3 upVelocity = new Vector3 (0f, 6.5f, 0f);
 
+	private Transform playerProjectiles;
 	private Rigidbody rigidBody;
 	//private float lifeCount = 0f;
 
@@ -27,7 +28,9 @@ public class CannonBall : NetworkBehaviour {
 //		}
 	}
 
-	public void CannonFire (Vector3 fireVector) {
+	public void CannonFire (GameObject theAttacker,Transform parent, Vector3 fireVector) {
+		attacker = theAttacker;
+		playerProjectiles = parent;
 		rigidBody = GetComponent<Rigidbody> ();
 		rigidBody.velocity = (fireVector * ballSpeed) + upVelocity;
 		Destroy (gameObject, lifeTime);
@@ -40,12 +43,13 @@ public class CannonBall : NetworkBehaviour {
 		GameObject target = obj.gameObject;
 		if (target.tag == "Player") {
 			target.GetComponent<Health> ().OnTakeDamage (ballDamage,attacker);
-			Instantiate (explosionFX, transform.position, Quaternion.identity);
+			GameObject Fx = Instantiate (explosionFX, transform.position, Quaternion.identity);
+			Fx.transform.SetParent (playerProjectiles);
 		}
 		//Destroy (gameObject);
 	}
 
-	public void SetAttacker(GameObject theAttacker){
-		attacker = theAttacker;
-	}
+//	public void SetAttacker(GameObject theAttacker){
+//		attacker = theAttacker;
+//	}
 }
