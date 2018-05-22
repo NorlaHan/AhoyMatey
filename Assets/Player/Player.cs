@@ -9,6 +9,9 @@ public class Player : NetworkBehaviour {
 	[SyncVar]
 	public bool isDebugMode = false , isGameEnd = false, isDead = false;
 
+	[SyncVar(hook = "OnShowFoam") ]
+	public bool showFoam = true;
+
 
 	public GameObject playerUIPrefab , playerFoam;
 	public PlayerTreasureStash playerStash;
@@ -127,6 +130,7 @@ public class Player : NetworkBehaviour {
 		}else {Debug.Log (name + ", missing AudioListener");}
 		if (GetComponentInChildren<Animator> ()) {
 			animator = GetComponentInChildren<Animator> ();
+			//NetworkAnimator
 		} else {Debug.Log (name + ", missing Animator");}
 		if (GetComponentInChildren<PlayerFoam> ().gameObject) {
 			playerFoam = GetComponentInChildren<PlayerFoam> ().gameObject;
@@ -345,25 +349,29 @@ public class Player : NetworkBehaviour {
 
 	[ClientRpc]
 	void RpcOnUnitDeath (){
-		isDead = true;
-		playerFoam.SetActive(false);
-		//playerStash.SetActive (false);
-		animator.SetBool ("isDead", true);
-		Debug.Log ("Player is dead.");
-		//Invoke ("RpcOnUnitRespawn",10f);
+		if (hasAuthority) {
+			isDead = true;
+			showFoam = false;
+			animator.SetBool ("isDead", true);
+			Debug.Log ("Player is dead.");
+		}
 	}
-
+		
 	[ClientRpc]
-	void RpcOnUnitRespawn (){
-		//if (isLocalPlayer) {
-		Vector3 position = transform.position;	
-		transform.localPosition = Vector3.zero;
-		animator.SetBool ("isDead", false);
-		playerFoam.SetActive(true);
-		isDead = false;
-		playerStash.CmdSpawnTreasureLoot (position);
-			//playerStash.SetActive (true);
+	public void RpcOnUnitRespawn (){
+		//if (hasAuthority) {
+			Vector3 position = transform.position;	
+			transform.localPosition = Vector3.zero;
+			animator.SetBool ("isDead", false);
+			showFoam = true;
+			isDead = false;
+			playerStash.CmdSpawnTreasureLoot (position);
 		//}
+	}
+		
+
+	void OnShowFoam (bool showfoam){
+		playerFoam.SetActive (showfoam);
 	}
 
 	public bool IsLocalPlayer (){
