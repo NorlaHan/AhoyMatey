@@ -37,7 +37,10 @@ public class Health : NetworkBehaviour {
 		
 	public void OnTakeDamage (float damage, GameObject theAttacker){
 		// Only server handle the health.
-		if (!isServer) {return;}
+		//if (!isServer) {return;}
+		if (!hasAuthority) {
+			return;
+		}
 		lastAttacker = theAttacker;
 		currentHealth -= damage;
 		if (currentHealth <= 0) {

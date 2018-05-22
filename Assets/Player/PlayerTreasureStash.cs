@@ -15,6 +15,16 @@ public class PlayerTreasureStash : NetworkBehaviour {
 
 	public float lootPenalty = 4f, startTreasure = 0;
 
+	private Vector3 deathPosition;
+	private float treasureForLoot;
+
+	public override void OnStartClient ()
+	{
+		base.OnStartClient ();
+		ClientScene.RegisterPrefab (treasureLootPrefab);
+		Debug.Log ("ClientScene.RegisterPrefab (treasurePrefab)");
+	}
+
 	// Use this for initialization
 	void Start () {
 		// Start with 100 treasure.
@@ -47,21 +57,27 @@ public class PlayerTreasureStash : NetworkBehaviour {
 
 	[Command]
 	public void CmdSpawnTreasureLoot (Vector3 position){
-		float treasureForLoot = TreasureBeenLooted ();
+		treasureForLoot = TreasureBeenLooted ();
+		deathPosition = position;
+		Invoke ("DelaySpawnTreasureLoot", 0.5f);
+	}
+
+	void DelaySpawnTreasureLoot (){
 		// Dnn't spawn treasure if there're nothing to loot.
 		if (treasureForLoot<=0) {
 			Debug.Log (name + ", treasureForLoot = " + treasureForLoot);
 			return;
 		}
-		GameObject treasureLoot = Instantiate (treasureLootPrefab, position, Quaternion.identity);
+		GameObject treasureLoot = Instantiate (treasureLootPrefab, deathPosition, Quaternion.identity);
 		NetworkServer.Spawn (treasureLoot);
 		treasureLoot.GetComponent<Treasure>().TreasureLootFromPlayer(treasureForLoot /* , player*/ );
 		Debug.Log ("CmdSpawnTreasureLoot ()");
-		RpcSpawnTreasureLoot (treasureLoot);
+		//RpcSpawnTreasureLoot (treasureLoot, deathPosition);
 	}
 
 	[ClientRpc]
-	void RpcSpawnTreasureLoot (GameObject treasureLoot) {
+	void RpcSpawnTreasureLoot (GameObject treasureLoot , Vector3 position) {
+		treasureLoot.transform.position = position;
 		Debug.Log ("RpcSpawnTreasureLoot");
 	}
 

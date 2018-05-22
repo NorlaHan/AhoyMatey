@@ -7,8 +7,10 @@ using UnityEngine.Networking;
 public class Player : NetworkBehaviour {
 
 	[SyncVar]
-	public bool isDebugMode = false , isGameEnd = false, isDead = false;
+	public bool isDebugMode = false , isGameEnd = false;
 
+	[SyncVar /*(hook = "OnDeathSpawnLoot")*/]
+	public bool isDead = false;
 	[SyncVar(hook = "OnShowFoam") ]
 	public bool showFoam = true;
 
@@ -36,7 +38,8 @@ public class Player : NetworkBehaviour {
 	private AudioListener audioListener;
 	private UIPlayer uiPlayer;
 	private Animator animator;
-	public bool checkParent = false, checkName = false, checkBase = false, checking = true;
+	private bool checkParent = false, checkName = false, checkBase = false, checking = true;
+
 
 	#region StartLocalPlayer
 	// This is trigger on player spawn on the client.
@@ -359,16 +362,16 @@ public class Player : NetworkBehaviour {
 		
 	[ClientRpc]
 	public void RpcOnUnitRespawn (){
-		//if (hasAuthority) {
-			Vector3 position = transform.position;	
+		if (hasAuthority) {
+			Vector3 position = transform.position;
 			transform.localPosition = Vector3.zero;
 			animator.SetBool ("isDead", false);
 			showFoam = true;
 			isDead = false;
 			playerStash.CmdSpawnTreasureLoot (position);
-		//}
+
+		}
 	}
-		
 
 	void OnShowFoam (bool showfoam){
 		playerFoam.SetActive (showfoam);

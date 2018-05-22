@@ -105,6 +105,7 @@ public class Treasure : NetworkBehaviour {
 							Treasure.treasureCount--;
 							Debug.Log (name + ", Treasure.treasureCount--");
 						}
+						Debug.Log (name + ", Been comsumed");
 						Destroy (gameObject, 1);
 					}
 				}

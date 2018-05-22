@@ -37,7 +37,7 @@ public class PlayerBase : NetworkBehaviour {
 			if (target.transform.parent.transform.parent.transform.parent == transform.parent) {
 				treasureStorage += target.transform.parent.transform.parent.GetComponent<PlayerTreasureStash> ().TreasureStoreToBase ();
 				//Debug.Log (target.name + "Player back to base, storage is now : " + treasureStorage);
-				if (treasureStorage >= winTreasureAmount) {
+				if (treasureStorage >= player.GetComponent<Player>().treasureToWin) {
 					Debug.Log (target.transform.parent.transform.parent.name + " Win!");
 					//player.GetComponent<Player>().OnGameSettle ();
 				}
