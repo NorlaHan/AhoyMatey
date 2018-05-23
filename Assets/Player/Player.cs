@@ -345,7 +345,7 @@ public class Player : NetworkBehaviour {
 	public void UpdatePlayerHealth(float playerHealthPercentage){
 		if (uiPlayer) {
 			uiPlayer.UIUpdatePlayerHealth (playerHealthPercentage);
-			Debug.Log ("UpdatePlayerHealth = " + playerHealthPercentage);
+			//Debug.Log ("UpdatePlayerHealth = " + playerHealthPercentage);
 		}
 
 	}

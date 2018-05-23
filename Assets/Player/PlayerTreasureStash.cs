@@ -14,7 +14,7 @@ public class PlayerTreasureStash : NetworkBehaviour {
 	[SyncVar]
 	public GameObject player;
 
-	public float lootPenalty = 4f, startTreasure = 0;
+	public float lootPenalty = 4f, startTreasure = 0, pillage = 20f;
 
 	private Vector3 deathPosition;
 	private float treasureForLoot;
@@ -84,6 +84,7 @@ public class PlayerTreasureStash : NetworkBehaviour {
 
 	public void TreasureLoot (float lootedTreasure){
 		playerTreasureCarry += lootedTreasure;
+		//playerTreasureCarry = Mathf.Floor(playerTreasureCarry += lootedTreasure);
 	}
 
 	// Send message to player

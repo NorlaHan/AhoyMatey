@@ -55,15 +55,10 @@ public class Health : NetworkBehaviour {
 				// Take the treasure automatically.
 				//			float lootedTreasure = treasureStash.TreasureBeenLooted ();
 				//			lastAttacker.GetComponentInChildren<PlayerTreasureStash> ().TreasureLoot (lootedTreasure);
-
-				// Treasure loot spawn at spot;
-				//treasureStash.CmdSpawnTreasureLoot ();
-
-				//RpcOnUnitRespawn ();
-				//OnDeath ();
 			}
 			// Add other types of units.
 
+			// Treasure loot spawn at spot;
 			SendMessage ("RpcOnUnitDeath");
 		}
 	}
@@ -75,16 +70,16 @@ public class Health : NetworkBehaviour {
 
 	public void OnGetRepair (float repair){
 		// Only server handle the health.
-		if (!isServer) {return;}
-		Mathf.Clamp(currentHealth += repair, 0 , fullHealth);
+		if (!hasAuthority) {return;}
+		currentHealth = Mathf.Clamp(currentHealth += repair, 0 , fullHealth);
+		OnChangeHealth (currentHealth);
 	}
 
 
 	// Hook to currentHealth.
 	public void OnChangeHealth(float crtHealth){
-		//GetComponent<Player> ().UpdatePlayerHealth (crtHealth / fullHealth);
 		SendMessage ("UpdatePlayerHealth", crtHealth / fullHealth);
-		Debug.Log (name + ", OnChangeHealth");
+		//Debug.Log (name + ", OnChangeHealth");
 	}
 
 	void OnRespawnHealth (){
