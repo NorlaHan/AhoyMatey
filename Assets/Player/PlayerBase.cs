@@ -5,7 +5,7 @@ using UnityEngine.Networking;
 
 public class PlayerBase : NetworkBehaviour {
 
-	public bool isDebugMode = false;
+	public bool isDebugMode = false, isActivated = false;
 	public float baseRepair = 10f , lootCount = 0;
 
 	[SyncVar(hook = "OnBaseTreasureStorageChange")]
@@ -19,9 +19,18 @@ public class PlayerBase : NetworkBehaviour {
 
 	public float winTreasureAmount = 2000;
 
+
+	public override void OnStartClient ()
+	{
+		base.OnStartClient ();
+		if (treasureStorage != 0) {
+			OnBaseTreasureStorageChange (treasureStorage);
+		}
+	}
+
 	// Use this for initialization
 	void Start () {
-		OnBaseTreasureStorageChange (treasureStorage);
+		
 	}
 	
 	// Update is called once per frame
@@ -88,6 +97,7 @@ public class PlayerBase : NetworkBehaviour {
 	}
 
 	public void BaseLinkToPlayer (GameObject playerOnClient){
+		isActivated = true;
 		player = playerOnClient;
 	}
 
@@ -98,8 +108,26 @@ public class PlayerBase : NetworkBehaviour {
 //			Debug.Log (name + ", no player assigned ,find player");
 //			player = GameObject.Find ("playerName");
 //		}
-		player.GetComponent<Player> ().ReceiveBaseTreasureStorageChange (treasure);
-		Debug.Log (name + ", TreasureStorageChange, call " + player.name);
-		//BroadcastMessage ("ReceiveBaseTreasureStorageChange", treasure);
+		if (player) {
+			//if (!hasAuthority) {return;}
+			player.GetComponent<Player> ().ReceiveBaseTreasureStorageChange (treasure);
+			Debug.Log (name + ", TreasureStorageChange, call " + player.name);
+		} else {
+			if (isActivated) {
+				Debug.Log ("TryToFindPlayerToStoreageChange");
+				//if player doesn't exist, try again 0.2 sec later. 
+				Invoke ("TryToFindPlayerToStoreageChange", 0.2f);
+			}
+		}
+	}
+
+	// if still not exist, trigger by adding 0.
+	void TryToFindPlayerToStoreageChange (){
+		if (player) {
+			//if (!hasAuthority) {return;}
+			player.GetComponent<Player> ().ReceiveBaseTreasureStorageChange (treasureStorage);
+		} else {
+			treasureStorage += 0;
+		}
 	}
 }

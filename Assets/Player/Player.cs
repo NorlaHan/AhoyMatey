@@ -111,7 +111,7 @@ public class Player : NetworkBehaviour {
 			// Cast self to the UI on the client.
 			playerBase.GetComponentInChildren<PlayerBase> ().BaseLinkToPlayer (gameObject);
 		} else {
-			Invoke ("TryToLinkPlayerToBase", 0.1f);
+			Invoke ("CmdPlayerSpawn", 0.1f);
 		}
 	}
 
@@ -169,7 +169,7 @@ public class Player : NetworkBehaviour {
 			if (transform.parent.GetComponentInChildren<PlayerBase> ()) {
 				playerBase = transform.parent.GetComponentInChildren<PlayerBase> ().gameObject;
 			}
-			Invoke ("TryToGetplayerBase", 0.1f);
+		Invoke ("TryToLinkPlayerToUI", 0.1f);
 		}
 	}
 

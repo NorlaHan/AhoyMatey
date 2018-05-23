@@ -59,18 +59,8 @@ public class TreasureSpawnMaster : NetworkBehaviour {
 	void OnCheckSpawnedTreasure (){
 		Debug.Log ("ClientCheckSpawnedTreasure");
 		treasureSpawnPoints = GameObject.FindObjectsOfType<TreasureSpawnPoint>();
-//		for (int i = 0; i < treasureSpawnPoints.Length; i++) {
-//			if (treasureSpawnPoints[i].transform.childCount == 0) {
-//				Debug.Log ("treasureSpawnPoints [i] , Has no child, i");
-				//if (!hasAuthority) {
-					OnCheckSpawnedTreasure2 ();
-				//} 
-//				else {
-//					Debug.Log ("CmdCheckSpawnedTreasure (i) has no authority ");
-//				}
-//			}
-//		}
-		//CmdCheckSpawnedTreasure ();
+		OnCheckSpawnedTreasure2 ();
+
 	}
 
 	//[Command]
@@ -95,15 +85,15 @@ public class TreasureSpawnMaster : NetworkBehaviour {
 		for (int i = 0; i < treasureSpawnPoints.Length; i++) {
 			if (treasureSpawnPoints [i].transform.childCount != 0) {
 				GameObject treasure = treasureSpawnPoints [i].transform.GetChild (0).gameObject;
-				RpcCheckSpawnedTreasure (i, treasure);
+				CheckSpawnedTreasure (i, treasure);
 			} else {
 				Debug.Log ("Treasure spawn point has no child");
 			}
 		}
 	}
 
-	[ClientRpc]
-	void RpcCheckSpawnedTreasure (int i ,GameObject treasure){
+	void CheckSpawnedTreasure (int i ,GameObject treasure){
+		if (!isClient) {return;}
 		if (treasureSpawnPoints [i].transform.childCount == 0) {
 			treasure.transform.SetParent(treasureSpawnPoints [i].transform);
 			Debug.Log ("Set treasure to spawn point on client");
