@@ -12,6 +12,8 @@ public class UIPlayer : MonoBehaviour {
 
 	public Text treasureInBase, treasurePlayerCarried, playerText;
 	public Slider healthBar;
+	public Image weaponIcon;
+	public Sprite[] weaponIcons;
 
 	// Call from player Rpc instantiate. faster than Start
 
@@ -36,6 +38,12 @@ public class UIPlayer : MonoBehaviour {
 				treasurePlayerCarried = item;
 			}else if (item.name == "PlayerText") {
 				playerText = item;
+			}
+		}
+		Image[] images = GetComponentsInChildren<Image> ();
+		foreach (Image item in images) {
+			if (item.name == "WeaponIcon") {
+				weaponIcon = item;
 			}
 		}
 		healthBar = GetComponentInChildren<Slider> ();
@@ -65,6 +73,14 @@ public class UIPlayer : MonoBehaviour {
 		healthBar.value = playerHealthPercentage;
 	}
 
+	public void UIUpdatePlayerWeapon (string weaponType ){
+		if (weaponType == "CannonOG") {
+			weaponIcon.sprite = weaponIcons [0];
+		}else if (weaponType == "ScatterGun") {
+			weaponIcon.sprite = weaponIcons [1];
+		}
+	}
+
 	public void SelfDestruct (){
 		Destroy (gameObject);
 	}
@@ -72,4 +88,5 @@ public class UIPlayer : MonoBehaviour {
 	public void DebugTest(string playerName){
 		Debug.Log (playerName + " can call " + name);
 	}
+
 }

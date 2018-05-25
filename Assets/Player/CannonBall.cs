@@ -5,9 +5,12 @@ using UnityEngine.Networking;
 
 public class CannonBall : NetworkBehaviour {
 
+	public enum WeaponType {CannonOG, ScatterGun}
+	public WeaponType type;
+
 	public float ballSpeed = 40f, lifeTime = 4f;
 	public float ballDamage = 20f;
-	public GameObject attacker, explosionFX;
+	public GameObject attacker, hitFX;
 	public Vector3 upVelocity = new Vector3 (0f, 6.5f, 0f);
 
 	private Transform playerProjectiles;
@@ -40,13 +43,18 @@ public class CannonBall : NetworkBehaviour {
 //		if (!isServer) {
 //			return;
 //		}
+		if (type == WeaponType.CannonOG) {
+			GameObject Fx = Instantiate (hitFX, transform.position, Quaternion.identity);
+			Fx.transform.SetParent (playerProjectiles);
+		}else if (type == WeaponType.ScatterGun) {
+			GameObject Fx = Instantiate (hitFX, transform.position, Quaternion.identity);
+			Fx.transform.SetParent (playerProjectiles);
+		}
 		GameObject target = obj.gameObject;
 		if (target.tag == "Player") {
 			target.GetComponent<Health> ().OnTakeDamage (ballDamage,attacker);
-			GameObject Fx = Instantiate (explosionFX, transform.position, Quaternion.identity);
-			Fx.transform.SetParent (playerProjectiles);
 		}
-		//Destroy (gameObject);
+		Destroy (gameObject,0.1f);
 	}
 
 //	public void SetAttacker(GameObject theAttacker){

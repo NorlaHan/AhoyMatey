@@ -9,11 +9,13 @@ public class Health : NetworkBehaviour {
 	public UnitType type;
 
 	public GameObject lastAttacker;
-	public float fullHealth = 100f;
+	public float fullHealth = 100f, armor= 0f, shield = 0f ;
 	public bool destroyOnDeath = false;
 
 	[SyncVar /* (hook = "OnChangeHealth")*/ ]	// Whenever current health  changed, call OnChangeHealth method.
 	public float currentHealth;
+
+	private Player player;
 
 	// Use this for initialization
 	void Start () {
@@ -21,6 +23,10 @@ public class Health : NetworkBehaviour {
 			OnChangeHealth (currentHealth);
 			if (!isServer) {return;}
 			CmdFullHealth ();
+			if (GetComponent<Player> ()) {
+				player = GetComponent<Player> ();
+			} else {Debug.LogWarning (name + ", missing Player");}
+
 		}
 		// Add other types of units.
 	}
@@ -38,11 +44,10 @@ public class Health : NetworkBehaviour {
 	public void OnTakeDamage (float damage, GameObject theAttacker){
 		// Only server handle the health.
 		//if (!isServer) {return;}
-		if (!hasAuthority) {
-			return;
-		}
+		if (!hasAuthority) {return;}
+		armor = player.armor;
 		lastAttacker = theAttacker;
-		currentHealth -= damage;
+		currentHealth -= Mathf.Clamp((damage-armor),1, 9999);
 		OnChangeHealth (currentHealth);
 		if (currentHealth <= 0) {
 			if (type == UnitType.Player) {
@@ -51,7 +56,7 @@ public class Health : NetworkBehaviour {
 				} else {
 					Debug.LogWarning (name + ", is dead.");
 				}
-				PlayerTreasureStash treasureStash =  GetComponentInChildren<PlayerTreasureStash> ();
+				//PlayerTreasureStash treasureStash =  GetComponentInChildren<PlayerTreasureStash> ();
 				// Take the treasure automatically.
 				//			float lootedTreasure = treasureStash.TreasureBeenLooted ();
 				//			lastAttacker.GetComponentInChildren<PlayerTreasureStash> ().TreasureLoot (lootedTreasure);

@@ -63,12 +63,15 @@ public class PlayerBase : NetworkBehaviour {
 	void OnTriggerStay (Collider obj){
 		if (player && obj.tag == "Player") {
 			//Debug.Log (obj.name +", in hub");
-			if (obj.GetComponentInParent<Player>().gameObject == player) {
-				Health health = obj.GetComponentInParent<Health> ();
-				if (health.currentHealth < health.fullHealth) {
-					health.OnGetRepair (Time.deltaTime * baseRepair);
+			Player playerInRange = obj.GetComponentInParent<Player>();
+			if (playerInRange.gameObject == player) {
+				if (!playerInRange.isDead) {	// Repairs only when the player is alive.
+					Health health = obj.GetComponentInParent<Health> ();
+					if (health.currentHealth < health.fullHealth) {
+						health.OnGetRepair (Time.deltaTime * baseRepair);
+					}
 				}
-			}else{
+			}else{	// Player in range is not own player.
 				if (treasureStorage > 0) {
 					PlayerTreasureStash	playerStash = obj.GetComponentInParent<PlayerTreasureStash> ();
 					lootCount += Time.deltaTime;

@@ -9,13 +9,14 @@ public class Player : NetworkBehaviour {
 	[SyncVar]
 	public bool isDebugMode = false , isGameEnd = false;
 
-	[SyncVar /*(hook = "OnDeathSpawnLoot")*/]
+	[SyncVar]
 	public bool isDead = false;
-	[SyncVar /*(hook = "OnShowFoam")*/ ]
-	public bool showFoam = true;
 
+	[SyncVar]
+	public float armor = 0f ,speed = 10f;
 
-	public GameObject playerUIPrefab , playerFoam;
+	public GameObject playerUIPrefab , playerFoam; 
+	public PlayerAttack[] playerAttacks;
 	public PlayerTreasureStash playerStash;
 	public GameManager gameManager;
 
@@ -23,14 +24,17 @@ public class Player : NetworkBehaviour {
 	public GameObject playerBase;
 
 	[SyncVar]
-	public string playerName, parentName, playerBaseName;
-//	[SyncVar]
-//	public string playerName , playerParentName;
+	public string playerName, parentName, playerBaseName, weaponName;
+
+	public enum WeaponType {CannonOG, ScatterGun};
+
+	//[SyncVar]
+	public WeaponType weaponType;
 
 	public float treasureCarried, treasureStoraged , treasureToWin = 2000f;
 
 	// public Vector3 playerPos, playerRot;
-	public float vx , vz, vy, speed = 5f, jumpSpeed = 6f; 
+	public float vx , vz, vy,  jumpSpeed = 6f; 
 
 	private PlayerSpawnPoint[] playerSpawnPoints;
 	private Rigidbody rigidBody;
@@ -154,6 +158,7 @@ public class Player : NetworkBehaviour {
 		//InstantiatePlayerUI ();
 	}
 
+	#region Spawn UI locally
 	[Client]
 	void InstantiatePlayerUI ()
 	{
@@ -166,12 +171,13 @@ public class Player : NetworkBehaviour {
 			uiPlayer.LinkUIToPlayer (this, playerBase.GetComponent<PlayerBase> ());
 		} else {
 			Debug.Log (name + "Can't find playerBase");
-			if (transform.parent.GetComponentInChildren<PlayerBase> ()) {
+			if (transform.parent && transform.parent.GetComponentInChildren<PlayerBase> ()) {
 				playerBase = transform.parent.GetComponentInChildren<PlayerBase> ().gameObject;
 			}
 		Invoke ("TryToLinkPlayerToUI", 0.1f);
 		}
 	}
+	#endregion
 
 	// Update is called once per frame
 
@@ -217,6 +223,34 @@ public class Player : NetworkBehaviour {
 		}
 	}
 
+	// This action has to be done on every player 
+	void ChangeWeaponType (){
+		if (weaponName == "CannonOG") {
+			foreach (PlayerAttack item in playerAttacks) {
+				item.type = PlayerAttack.WeaponType.CannonOG;
+				item.OnWeaponChange ();
+			}
+		}else if (weaponName == "ScatterGun") {
+			foreach (PlayerAttack item in playerAttacks) {
+				item.type = PlayerAttack.WeaponType.ScatterGun;
+				item.OnWeaponChange ();
+			}
+		}
+	}
+
+	// This only need to happen locally
+	[Command]
+	void CmdSetWeaponType ()
+	{
+		if (weaponType == WeaponType.CannonOG) {
+			weaponName = weaponType.ToString ();
+		}
+		else
+			if (weaponType == WeaponType.ScatterGun) {
+				weaponName = weaponType.ToString ();
+			}
+	}
+
 	void Update () {
 		// Cut off control when game ends.
 		if (isGameEnd || isDead) {
@@ -225,9 +259,15 @@ public class Player : NetworkBehaviour {
 		// Not local player will stop here.
 		CheckOnStartClient ();
 
+		ChangeWeaponType ();
+
+
 		if (!isLocalPlayer) {
 			return;
 		}
+
+		CmdSetWeaponType ();
+		UpdatePlayerWeaponType ();
 
 		if (CrossPlatformInputManager.GetButton ("Horizontal")) {
 			//playerPos.x += CrossPlatformInputManager.GetAxis ("Horizontal");
@@ -284,7 +324,6 @@ public class Player : NetworkBehaviour {
 				}
 			}
 		}
-
 		//CheckClientHierarchy ();
 
 		if (isDebugMode) {
@@ -318,7 +357,6 @@ public class Player : NetworkBehaviour {
 
 	[Command]
 	public void CmdOnGameSettle (GameObject playerWinner){
-		//if (!isServer) {return;}
 		// Game settled , set all player isGameEnd to true.
 		Player[] players = GameObject.FindObjectsOfType<Player> ();
 		foreach (var item in players) {
@@ -329,8 +367,6 @@ public class Player : NetworkBehaviour {
 
 	[ClientRpc]
 	void RpcOnGameSettle (GameObject playerWinner ){
-		//isGameEnd = true;
-		//isGameEnd = true;
 		gameManager.OnPlayerGameSettle (playerWinner);
 	}
 
@@ -347,16 +383,25 @@ public class Player : NetworkBehaviour {
 			uiPlayer.UIUpdatePlayerHealth (playerHealthPercentage);
 			//Debug.Log ("UpdatePlayerHealth = " + playerHealthPercentage);
 		}
+	}
 
+	[Client]
+	void UpdatePlayerWeaponType (){
+		if (uiPlayer) {
+			if (weaponName == "CannonOG") {
+				uiPlayer.UIUpdatePlayerWeapon ("CannonOG");
+			}else if (weaponName == "ScatterGun") {
+				uiPlayer.UIUpdatePlayerWeapon ("ScatterGun");
+			}
+		}
 	}
 	#endregion
 
 	[ClientRpc]
 	void RpcOnUnitDeath (){
 		if (hasAuthority) {
-			isDead = true;
+			CmdIsPlayerDead (true);
 			playerFoam.SetActive (false);
-			//showFoam = false;
 			if (!animator) {animator = GetComponent<Animator> ();}
 			animator.SetBool ("isDead", true);
 			Debug.Log ("Player is dead.");
@@ -371,21 +416,34 @@ public class Player : NetworkBehaviour {
 			if (!animator) {animator = GetComponent<Animator> ();}
 			animator.SetBool ("isDead", false);
 			playerFoam.SetActive (true);
-			//showFoam = true;
-			isDead = false;
+			CmdIsPlayerDead (false);
 			SendMessage ("OnRespawnHealth");
 			playerStash.CmdSpawnTreasureLoot (position);
+			// Reset player state
+			speed = 10;
+			armor = 0;
+			weaponType = WeaponType.CannonOG;
+			CmdSetWeaponType ();
 		}
 	}
 
-//	void OnShowFoam (bool showfoam){
-//		playerFoam.SetActive (showfoam);
-//	}
+	[Command]
+	void CmdIsPlayerDead (bool dead){
+		isDead = dead;
+	}
 
 	public bool IsLocalPlayer (){
 		return isLocalPlayer;
 	}
 
+	[Command]
+	void CmdOnGetPowerUp (string type, float parameter){
+		if (type == "Armor") {
+			armor = Mathf.Clamp ((armor + parameter),0,20);
+		}else if (type == "Speed") {
+			speed = Mathf.Clamp ((speed + parameter), 5, 40);
+		}
+	}
 
 //	[Server]
 //	void GameSettle () {
