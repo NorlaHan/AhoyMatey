@@ -13,7 +13,10 @@ public class Player : NetworkBehaviour {
 	public bool isDead = false;
 
 	[SyncVar]
-	public float armor = 0f ,speed = 10f;
+	public float armor = 0f;
+
+	[SyncVar]
+	public float speed = 10f;
 
 	public GameObject playerUIPrefab , playerFoam; 
 	public PlayerAttack[] playerAttacks;
@@ -26,7 +29,7 @@ public class Player : NetworkBehaviour {
 	[SyncVar]
 	public string playerName, parentName, playerBaseName, weaponName;
 
-	public enum WeaponType {CannonOG, ScatterGun};
+	public enum WeaponType {CannonOG, ScatterGun, SuperCannon};
 
 	//[SyncVar]
 	public WeaponType weaponType;
@@ -114,6 +117,7 @@ public class Player : NetworkBehaviour {
 			playerBaseName = playerBase.name;
 			// Cast self to the UI on the client.
 			playerBase.GetComponentInChildren<PlayerBase> ().BaseLinkToPlayer (gameObject);
+			weaponName = "CannonOG";
 		} else {
 			Invoke ("CmdPlayerSpawn", 0.1f);
 		}
@@ -169,6 +173,7 @@ public class Player : NetworkBehaviour {
 	void TryToLinkPlayerToUI(){
 		if (playerBase) {
 			uiPlayer.LinkUIToPlayer (this, playerBase.GetComponent<PlayerBase> ());
+			Invoke ("InitializeUI", 0.5f);
 		} else {
 			Debug.Log (name + "Can't find playerBase");
 			if (transform.parent && transform.parent.GetComponentInChildren<PlayerBase> ()) {
@@ -177,6 +182,13 @@ public class Player : NetworkBehaviour {
 		Invoke ("TryToLinkPlayerToUI", 0.1f);
 		}
 	}
+
+	void InitializeUI (){
+		UpdatePlayerWeaponType ();
+		uiPlayer.UIUpdatePlayerPowerUp ("Speed", speed);
+		uiPlayer.UIUpdatePlayerPowerUp ("Armor", armor);
+	}
+
 	#endregion
 
 	// Update is called once per frame
@@ -223,6 +235,49 @@ public class Player : NetworkBehaviour {
 		}
 	}
 
+	// Pick up power ups
+	[Command]
+	public void CmdOnGetPowerUp (string type, float parameter){
+		if (type == "Armor") {
+			armor = Mathf.Clamp ((armor + parameter),0,40);
+			RpcUpdatePlayerPowerUp (type, armor);
+		}else if (type == "Speed") {
+			speed = Mathf.Clamp ((speed + parameter), 5, 40);
+			RpcUpdatePlayerPowerUp (type, speed);
+		}else if (type == "WeaponScatter") {
+			weaponName = "ScatterGun";
+//			weaponType = WeaponType.ScatterGun; 
+//			CmdSetWeaponType ();
+		}else if (type == "WeaponSuper") {
+			weaponName = "SuperCannon";
+//			weaponType = WeaponType.SuperCannon;
+//			CmdSetWeaponType ();
+		}
+	}
+
+	// This only need to happen locally
+//	[Command]
+//	void CmdSetWeaponType ()
+//	{
+//		if (weaponType == WeaponType.CannonOG) {
+//			weaponName = weaponType.ToString ();
+//		}else if (weaponType == WeaponType.ScatterGun) {
+//			weaponName = weaponType.ToString ();
+//		}else if (weaponType == WeaponType.SuperCannon) {
+//			weaponName = weaponType.ToString ();
+//		}
+//		RpcSetWeaponType (weaponName);
+//		//ChangeWeaponType ();
+//	}
+//
+//	[ClientRpc]
+//	void RpcSetWeaponType (string weapon){
+//		if (!hasAuthority) {
+//			weaponName = weapon;
+//			ChangeWeaponType ();
+//		}
+//	}
+
 	// This action has to be done on every player 
 	void ChangeWeaponType (){
 		if (weaponName == "CannonOG") {
@@ -235,20 +290,12 @@ public class Player : NetworkBehaviour {
 				item.type = PlayerAttack.WeaponType.ScatterGun;
 				item.OnWeaponChange ();
 			}
-		}
-	}
-
-	// This only need to happen locally
-	[Command]
-	void CmdSetWeaponType ()
-	{
-		if (weaponType == WeaponType.CannonOG) {
-			weaponName = weaponType.ToString ();
-		}
-		else
-			if (weaponType == WeaponType.ScatterGun) {
-				weaponName = weaponType.ToString ();
+		}else if (weaponName == "SuperCannon") {
+			foreach (PlayerAttack item in playerAttacks) {
+				item.type = PlayerAttack.WeaponType.SuperCannon;
+				item.OnWeaponChange ();
 			}
+		}
 	}
 
 	void Update () {
@@ -266,7 +313,7 @@ public class Player : NetworkBehaviour {
 			return;
 		}
 
-		CmdSetWeaponType ();
+		//CmdSetWeaponType ();
 		UpdatePlayerWeaponType ();
 
 		if (CrossPlatformInputManager.GetButton ("Horizontal")) {
@@ -392,9 +439,19 @@ public class Player : NetworkBehaviour {
 				uiPlayer.UIUpdatePlayerWeapon ("CannonOG");
 			}else if (weaponName == "ScatterGun") {
 				uiPlayer.UIUpdatePlayerWeapon ("ScatterGun");
+			}else if (weaponName == "SuperCannon") {
+				uiPlayer.UIUpdatePlayerWeapon ("SuperCannon");
 			}
 		}
 	}
+
+	[ClientRpc]
+	void RpcUpdatePlayerPowerUp (string type, float parameter){
+		if (hasAuthority && uiPlayer) {
+			uiPlayer.UIUpdatePlayerPowerUp (type,parameter);
+		}
+	}
+
 	#endregion
 
 	[ClientRpc]
@@ -422,8 +479,10 @@ public class Player : NetworkBehaviour {
 			// Reset player state
 			speed = 10;
 			armor = 0;
-			weaponType = WeaponType.CannonOG;
-			CmdSetWeaponType ();
+//			weaponType = WeaponType.CannonOG;
+//			CmdSetWeaponType ();
+			weaponName = "CannonOG";
+			InitializeUI ();
 		}
 	}
 
@@ -435,69 +494,6 @@ public class Player : NetworkBehaviour {
 	public bool IsLocalPlayer (){
 		return isLocalPlayer;
 	}
-
-	[Command]
-	void CmdOnGetPowerUp (string type, float parameter){
-		if (type == "Armor") {
-			armor = Mathf.Clamp ((armor + parameter),0,20);
-		}else if (type == "Speed") {
-			speed = Mathf.Clamp ((speed + parameter), 5, 40);
-		}
-	}
-
-//	[Server]
-//	void GameSettle () {
-//		if (!isServer) {return;}
-//		gameManager.OnPlayerGameSettle (name);
-//		Debug.Log (name + ", OnGameSettle");
-//	}
-	//	void PlayerSpawn(){
-	//		Debug.Log (name + ", PlayerSpawn called");
-	//		playerSpawnMaster = GameObject.FindObjectOfType<PlayerSpawnMaster> ().gameObject;
-	//		playerSpawnPoints = playerSpawnMaster.transform.GetComponentsInChildren<PlayerSpawnPoint> ();
-	//		for (int i = 0; i < playerSpawnPoints.Length; i++) {
-	//			print (playerSpawnPoints [i].name + ", child count is " + playerSpawnPoints [i].transform.childCount);
-	//			if (playerSpawnPoints [i].transform.childCount == 0) {
-	//				gameObject.transform.SetParent (playerSpawnPoints [i].transform);
-	//				gameObject.transform.localPosition = Vector3.zero;
-	//
-	//				//gameObject.transform.position = playerSpawnPoints [i].transform.position;
-	//				gameObject.name = "Player" + (i + 1);
-	//				Debug.Log (name + ", Set parent to , " + playerSpawnPoints [i].name);
-	//				break;
-	//			}
-	//		}
-	//	}
-
-	//	void OnTriggerStay(Collider obj){
-	//		if (isLocalPlayer) {
-	//			//Debug.Log ("something trigger, " + obj.name);
-	//			GameObject target = obj.gameObject;
-	//			if (target.tag == "Player") {
-	//				Debug.Log ("Target in sight, fire !!");
-	//			}
-	//		}
-	//	}
-
-	//	public void OnNewPlayerStart (){
-	//		playerCamera = GetComponentInChildren<Camera> ();
-	//		Camera[] cameras = GameObject.FindObjectsOfType<Camera> ();
-	//		foreach (var camera in cameras) {
-	//			camera.gameObject.SetActive(false);
-	//		}
-	//		playerCamera.gameObject.SetActive (true);
-	//	}
-
-	//	public override void OnStartClient (){
-	//		playerCamera = GetComponentInChildren<Camera> ();
-	//		Camera[] cameras = GameObject.FindObjectsOfType<Camera> ();
-	//		foreach (var camera in cameras) {
-	//			print (camera.name);
-	//			camera.gameObject.SetActive(false);
-	//		}
-	//
-	//		playerCamera.gameObject.SetActive (true);
-	//	}
 
 
 }

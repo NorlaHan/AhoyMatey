@@ -5,11 +5,11 @@ using UnityEngine.Networking;
 
 public class PlayerAttack : MonoBehaviour {
 
-	public enum WeaponType {CannonOG, ScatterGun};
+	public enum WeaponType {CannonOG, ScatterGun, SuperCannon};
 	public WeaponType type;
 
-	public GameObject cannonBall, scatterGun, currentTarget;
-	public float cannonOGRate = 2f, scatterGunRate = 1.8f;
+	public GameObject cannonBall, scatterGun, superCannon,currentTarget;
+	public float cannonOGRate = 2f, scatterGunRate = 1.8f, superCannonGunRate = 2.2f;
 	public SpawnPointIndicator[] spawnPos;
 
 	private Transform playerProjectiles;
@@ -41,7 +41,9 @@ public class PlayerAttack : MonoBehaviour {
 		if (type == WeaponType.CannonOG) {
 			fireRate = cannonOGRate;
 		}else if (type == WeaponType.ScatterGun) {
-				fireRate = scatterGunRate;
+			fireRate = scatterGunRate;
+		}else if (type == WeaponType.SuperCannon) {
+			fireRate = superCannonGunRate;
 		}
 	}
 	
@@ -104,6 +106,17 @@ public class PlayerAttack : MonoBehaviour {
 						FiredCannon.GetComponent<CannonBall> ().CannonFire (attacker,playerProjectiles, fireVector);
 					}
 
+				}else if (type == WeaponType.SuperCannon) {
+					fireVector = (currentTarget.transform.position - spawnPos[0].transform.position).normalized;
+					// put all cannon under playerProjectiles
+					FiredCannon = Instantiate (superCannon, spawnPos[0].transform.position, Quaternion.identity);
+					FiredCannon.transform.SetParent (playerProjectiles);
+
+					// who is the attacker
+					GameObject attacker = GetComponentInParent<Player>().gameObject;
+					//FiredCannon.GetComponent<CannonBall> ().SetAttacker (attacker);
+
+					FiredCannon.GetComponent<CannonBall> ().CannonFire (attacker,playerProjectiles, fireVector);
 				}
 
 			}

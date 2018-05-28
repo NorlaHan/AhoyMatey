@@ -15,12 +15,12 @@ public class PowerUp : NetworkBehaviour {
 	[SyncVar]
 	public float powerUpAmount;
 
-	public float minArmor = 1, maxArmor = 2;
-	public float minSpeed = 2, maxSpeed = 4;
+	public int minArmor = 1, maxArmor = 2;
+	public int minSpeed = 2, maxSpeed = 4;
 
 	// Use this for initialization
 
-	public enum PowerUpType {Armor,Speed,Weapon};
+	public enum PowerUpType {Armor,Speed,WeaponScatter,WeaponSuper};
 	public PowerUpType type;
 
 	//private Player PlayerBeenLooted;
@@ -31,9 +31,11 @@ public class PowerUp : NetworkBehaviour {
 			if (!isServer) {return;}
 		if (type == PowerUpType.Armor) {
 				ServerRollArmorAmount ();
-		}
+			}else if (type == PowerUpType.Speed) {
+				ServerRollSpeedAmount ();
+			}
 
-			parentName = transform.parent.name;
+//			parentName = transform.parent.name;
 		}
 
 	}
@@ -47,18 +49,35 @@ public class PowerUp : NetworkBehaviour {
 	[Server]
 	public void ServerRollArmorAmount (){
 		Debug.Log ("Roll repair Amount");
-		powerUpAmount = Random.Range (minArmor, maxArmor);
+		powerUpAmount = Random.Range (minArmor, maxArmor+1);
 		RpcSetPowerUpAmount (powerUpAmount);
 	}
+
+	[Server]
+	public void ServerRollSpeedAmount (){
+		Debug.Log ("Roll repair Amount");
+		powerUpAmount = Random.Range (minSpeed, maxSpeed+1);
+		RpcSetPowerUpAmount (powerUpAmount);
+	}
+
+	[ClientRpc]
+	void RpcSetPowerUpAmount (float amount){
+		powerUpAmount = amount;
+	}
+
+
+
+
 // TODO WIP here
 	// Update is called once per frame
 	void Update () {
 		if (isDebugMode) {
-			Debug.Log (name + "isClient = " + isClient+", isServer = "+ isServer +", repairAmount :" + powerUpAmount);
+			Debug.Log (name +",type="+ type + ", isClient = " + isClient+", isServer = "+ isServer +", powerUpAmount = " + powerUpAmount);
+			isDebugMode = false;
 		}
-		if (!transform.parent && !isLoot) {
-			transform.SetParent (GameObject.Find(parentName).transform);
-		}
+//		if (!transform.parent && !isLoot) {
+//			transform.SetParent (GameObject.Find(parentName).transform);
+//		}
 		//CheckRepairOnClient ();
 	}
 
@@ -66,17 +85,26 @@ public class PowerUp : NetworkBehaviour {
 
 
 	// Client get the amount and sync wuth server.
-	[ClientRpc]
-	void RpcSetPowerUpAmount (float amount){
-		powerUpAmount = amount;
-	}
+
 
 	void OnTriggerEnter (Collider obj){
 		if (obj.tag == "PlayerStash") {
 			//GameObject target = obj.GetComponentInParent<Health>().gameObject;
-			if (obj.GetComponentInParent<Health>()) {
-				obj.GetComponentInParent<Health>().OnGetRepair(powerUpAmount);
-				powerUpAmount = 0;
+			if (obj.GetComponentInParent<Player>() && hasAuthority) {
+				if (type == PowerUpType.Armor) {
+					obj.GetComponentInParent<Player> ().CmdOnGetPowerUp ("Armor", powerUpAmount);
+					powerUpAmount = 0;
+				}else if (type == PowerUpType.Speed) {
+					obj.GetComponentInParent<Player> ().CmdOnGetPowerUp ("Speed", powerUpAmount);
+					powerUpAmount = 0;
+				}else if (type == PowerUpType.WeaponScatter) {
+					obj.GetComponentInParent<Player> ().CmdOnGetPowerUp ("WeaponScatter", powerUpAmount);
+					powerUpAmount = 0;
+				}else if (type == PowerUpType.WeaponSuper) {
+					obj.GetComponentInParent<Player> ().CmdOnGetPowerUp ("WeaponSuper", powerUpAmount);
+					powerUpAmount = 0;
+				}
+
 				// TODO player can only pick the amount it can carry. the rest will left behind
 				if (powerUpAmount == 0) {
 					if (isServer && !isLoot && !isTaken) {

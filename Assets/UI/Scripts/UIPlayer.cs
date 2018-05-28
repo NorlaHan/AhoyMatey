@@ -10,7 +10,7 @@ public class UIPlayer : MonoBehaviour {
 	public PlayerBase playerBase;
 	//public Health health;
 
-	public Text treasureInBase, treasurePlayerCarried, playerText;
+	public Text treasureInBase, treasurePlayerCarried, playerText, playerSpeed, playerArmor;
 	public Slider healthBar;
 	public Image weaponIcon;
 	public Sprite[] weaponIcons;
@@ -20,6 +20,10 @@ public class UIPlayer : MonoBehaviour {
 	public void LinkUIToPlayer(Player playerOnClient, PlayerBase playerBaseOnClient){
 		player = playerOnClient;
 		playerBase = playerBaseOnClient;
+//		if (player) {
+//			UIUpdatePlayerPowerUp ("Speed");
+//			UIUpdatePlayerPowerUp ("Armor");
+//		}
 	}
 
 	void Awake (){
@@ -38,6 +42,10 @@ public class UIPlayer : MonoBehaviour {
 				treasurePlayerCarried = item;
 			}else if (item.name == "PlayerText") {
 				playerText = item;
+			}else if (item.name == "StatusSpeed") {
+				playerSpeed = item;
+			}else if (item.name == "StatusArmor") {
+				playerArmor = item;
 			}
 		}
 		Image[] images = GetComponentsInChildren<Image> ();
@@ -48,7 +56,9 @@ public class UIPlayer : MonoBehaviour {
 		}
 		healthBar = GetComponentInChildren<Slider> ();
 		//playerText.text = player.name;
+
 	}
+		
 
 	void Update (){
 
@@ -78,8 +88,20 @@ public class UIPlayer : MonoBehaviour {
 			weaponIcon.sprite = weaponIcons [0];
 		}else if (weaponType == "ScatterGun") {
 			weaponIcon.sprite = weaponIcons [1];
+		}else if (weaponType == "SuperCannon") {
+			weaponIcon.sprite = weaponIcons [2];
 		}
 	}
+
+	public void UIUpdatePlayerPowerUp (string type, float parameter){
+		if (type == "Speed") {
+			playerSpeed.text = parameter.ToString();
+		}else if (type == "Armor") {
+			playerArmor.text = parameter.ToString ();
+		}
+		//Debug.Log ("type = " + type + ", parameter = "+ parameter);
+	}
+
 
 	public void SelfDestruct (){
 		Destroy (gameObject);

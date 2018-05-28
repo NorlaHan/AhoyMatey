@@ -21,11 +21,13 @@ public class Health : NetworkBehaviour {
 	void Start () {
 		if (type == UnitType.Player) {
 			OnChangeHealth (currentHealth);
-			if (!isServer) {return;}
-			CmdFullHealth ();
 			if (GetComponent<Player> ()) {
 				player = GetComponent<Player> ();
 			} else {Debug.LogWarning (name + ", missing Player");}
+
+			if (isServer) {
+				CmdFullHealth ();
+			}
 
 		}
 		// Add other types of units.
