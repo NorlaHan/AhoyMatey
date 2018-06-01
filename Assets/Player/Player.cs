@@ -7,13 +7,13 @@ using UnityEngine.Networking;
 public class Player : NetworkBehaviour {
 
 	[SyncVar]
-	public bool isDebugMode = false , isGameEnd = false;
+	public bool isDebugMode = false , isGameEnd = false /*, isChangingWeapon = false*/;
 
 	[SyncVar]
-	public bool isDead = false;
+	public bool isDead = false, onSea , onLand;
 
 	[SyncVar]
-	public float armor = 0f;
+	public float armor = 0f , landCount = 0;
 
 	[SyncVar]
 	public float speed = 10f;
@@ -34,15 +34,20 @@ public class Player : NetworkBehaviour {
 	//[SyncVar]
 	public WeaponType weaponType;
 
-	public float treasureCarried, treasureStoraged , treasureToWin = 2000f;
+	public float treasureCarried, treasureStoraged;
+
+	[Tooltip("Rule Setting.")]
+	public float treasureToWin = 2000f ,MaxSpeed = 20, MaxArmor = 8;
 
 	// public Vector3 playerPos, playerRot;
-	public float vx , vz, vy,  jumpSpeed = 6f; 
+	public float vx , vz, vy, rc = 0f, jumpSpeed = 6f; 
+	public Transform cameraRoot;
 
+	private Vector3 camForward, move;
 	private PlayerSpawnPoint[] playerSpawnPoints;
 	private Rigidbody rigidBody;
 	private Camera playerCamera;
-	private AudioListener audioListener;
+	//private AudioListener audioListener;
 	private UIPlayer uiPlayer;
 	private Animator animator;
 	private bool checkParent = false, checkName = false, checkBase = false, checking = true;
@@ -136,9 +141,9 @@ public class Player : NetworkBehaviour {
 		if (GetComponentInChildren<Camera> ()) {
 			playerCamera = GetComponentInChildren<Camera> ();
 		}else {Debug.Log (name + ", missing Camera");}
-		if (GetComponentInChildren<AudioListener> ()) {
-			audioListener = GetComponentInChildren<AudioListener> ();
-		}else {Debug.Log (name + ", missing AudioListener");}
+//		if (GetComponentInChildren<AudioListener> ()) {
+//			audioListener = GetComponentInChildren<AudioListener> ();
+//		}else {Debug.Log (name + ", missing AudioListener");}
 		if (GetComponentInChildren<Animator> ()) {
 			animator = GetComponent<Animator> ();
 			//NetworkAnimator
@@ -187,6 +192,7 @@ public class Player : NetworkBehaviour {
 		UpdatePlayerWeaponType ();
 		uiPlayer.UIUpdatePlayerPowerUp ("Speed", speed);
 		uiPlayer.UIUpdatePlayerPowerUp ("Armor", armor);
+		//isChangingWeapon = true;
 	}
 
 	#endregion
@@ -200,7 +206,7 @@ public class Player : NetworkBehaviour {
 	}
 
 	void CheckOnStartClient () {
-		if (!isLocalPlayer && checking) {
+		if (!isLocalPlayer && checking && !isDebugMode) {
 			try {
 				if (!checkParent && !transform.parent && !isServer) {
 					transform.SetParent (GameObject.Find (parentName).transform);
@@ -235,68 +241,87 @@ public class Player : NetworkBehaviour {
 		}
 	}
 
-	// Pick up power ups
+	// Pick up power ups. SyncVar requires server change to sync client.
 	[Command]
 	public void CmdOnGetPowerUp (string type, float parameter){
+		Debug.Log ("Consume " + type + ", "+parameter);
 		if (type == "Armor") {
-			armor = Mathf.Clamp ((armor + parameter),0,40);
+			armor = Mathf.Clamp ((armor + parameter),0, MaxArmor);
 			RpcUpdatePlayerPowerUp (type, armor);
 		}else if (type == "Speed") {
-			speed = Mathf.Clamp ((speed + parameter), 5, 40);
+			speed = Mathf.Clamp ((speed + parameter), 5, MaxSpeed);
 			RpcUpdatePlayerPowerUp (type, speed);
 		}else if (type == "WeaponScatter") {
 			weaponName = "ScatterGun";
+			//isChangingWeapon = true;
+			//Debug.Log ("isChangingWeapon = true;");
 //			weaponType = WeaponType.ScatterGun; 
 //			CmdSetWeaponType ();
 		}else if (type == "WeaponSuper") {
 			weaponName = "SuperCannon";
+			//isChangingWeapon = true;
+			//Debug.Log ("isChangingWeapon = true;");
 //			weaponType = WeaponType.SuperCannon;
 //			CmdSetWeaponType ();
 		}
 	}
 
-	// This only need to happen locally
 //	[Command]
-//	void CmdSetWeaponType ()
-//	{
-//		if (weaponType == WeaponType.CannonOG) {
-//			weaponName = weaponType.ToString ();
-//		}else if (weaponType == WeaponType.ScatterGun) {
-//			weaponName = weaponType.ToString ();
-//		}else if (weaponType == WeaponType.SuperCannon) {
-//			weaponName = weaponType.ToString ();
-//		}
-//		RpcSetWeaponType (weaponName);
-//		//ChangeWeaponType ();
+//	void CmdChangingWeapon(bool isChanging){
+//		isChangingWeapon = isChanging;
 //	}
-//
-//	[ClientRpc]
-//	void RpcSetWeaponType (string weapon){
-//		if (!hasAuthority) {
-//			weaponName = weapon;
-//			ChangeWeaponType ();
-//		}
-//	}
+
+	// This only need to happen locally
+	//[Command]
+	void SetWeaponType ()
+	{
+		if (weaponType == WeaponType.CannonOG) {
+			weaponName = weaponType.ToString ();
+		}else if (weaponType == WeaponType.ScatterGun) {
+			weaponName = weaponType.ToString ();
+		}else if (weaponType == WeaponType.SuperCannon) {
+			weaponName = weaponType.ToString ();
+		}
+		if (isServer) {
+			RpcSetWeaponType (weaponName);
+		}
+	//ChangeWeaponType ();
+	}
+
+	[ClientRpc]
+	void RpcSetWeaponType (string weapon){
+		if (!hasAuthority) {
+			weaponName = weapon;
+			ChangeWeaponType ();
+		}
+	}
+
 
 	// This action has to be done on every player 
 	void ChangeWeaponType (){
-		if (weaponName == "CannonOG") {
+		//if (weaponName == "CannonOG") {
+			if (weaponName == playerAttacks[0].weaponName) {
+				return;
+			}
 			foreach (PlayerAttack item in playerAttacks) {
-				item.type = PlayerAttack.WeaponType.CannonOG;
+				//item.type = PlayerAttack.WeaponType.CannonOG;
+				item.weaponName = weaponName;
 				item.OnWeaponChange ();
 			}
-		}else if (weaponName == "ScatterGun") {
-			foreach (PlayerAttack item in playerAttacks) {
-				item.type = PlayerAttack.WeaponType.ScatterGun;
-				item.OnWeaponChange ();
-			}
-		}else if (weaponName == "SuperCannon") {
-			foreach (PlayerAttack item in playerAttacks) {
-				item.type = PlayerAttack.WeaponType.SuperCannon;
-				item.OnWeaponChange ();
-			}
-		}
+//		}else if (weaponName == "ScatterGun") {
+//			foreach (PlayerAttack item in playerAttacks) {
+//				item.type = PlayerAttack.WeaponType.ScatterGun;
+//				item.OnWeaponChange ();
+//			}
+//		}else if (weaponName == "SuperCannon") {
+//			foreach (PlayerAttack item in playerAttacks) {
+//				item.type = PlayerAttack.WeaponType.SuperCannon;
+//				item.OnWeaponChange ();
+//			}
+//		}
 	}
+
+
 
 	void Update () {
 		// Cut off control when game ends.
@@ -305,12 +330,20 @@ public class Player : NetworkBehaviour {
 		}
 		// Not local player will stop here.
 		CheckOnStartClient ();
+		if (isDebugMode) {
+			SetWeaponType ();
+			//isChangingWeapon = true;
+		}
 
-		ChangeWeaponType ();
 
 
 		if (!isLocalPlayer) {
 			return;
+		}
+
+
+		if (isDebugMode) {
+			uiPlayer.DebugTest (name);
 		}
 
 		//CmdSetWeaponType ();
@@ -328,26 +361,14 @@ public class Player : NetworkBehaviour {
 		}  else {
 			vz = 0;
 		}
-		if (CrossPlatformInputManager.GetButtonDown ("Jump")) {
-			//playerPos.z += CrossPlatformInputManager.GetAxis ("Jump");
-			vy = CrossPlatformInputManager.GetAxisRaw ("Jump")*jumpSpeed;
-			rigidBody.velocity += new Vector3 (0, vy, 0);
-		}  else {
-			vy = 0;
-		}
-		if (rigidBody.velocity.magnitude < speed) {
-			rigidBody.velocity += new Vector3 (vx, 0 , vz).normalized;
-			BroadcastMessage ("RotateToForward", new Vector3 (vx, 0, vz));
-		}
-
-//		if (rigidBody.velocity != Vector3.zero) {
-//			animator.SetBool ("isMoving", true);
-//			Debug.Log (name + " is Moving");
-//		} else {
-//			animator.SetBool ("isMoving", false);
-//			Debug.Log (name + " Stop");
+		if (CrossPlatformInputManager.GetButton ("RotCam")) {
+			rc += CrossPlatformInputManager.GetAxis ("RotCam");
+			cameraRoot.localEulerAngles = new Vector3 (0, rc, 0);
+		} 
+//		else {
+//			rc = 0;
+//			cameraRoot.localEulerAngles = Vector3.zero;
 //		}
-
 		// disable any other cameras other than the player's.
 		if (GameObject.FindObjectsOfType<Camera> ().Length>1) {
 			playerCamera = GetComponentInChildren<Camera> ();
@@ -371,14 +392,53 @@ public class Player : NetworkBehaviour {
 				}
 			}
 		}
-		//CheckClientHierarchy ();
 
-		if (isDebugMode) {
-			uiPlayer.DebugTest (name);
+		// Take damage on land.
+		if (!onSea && onLand) {
+			landCount += Time.deltaTime;
+			if (landCount > 0.25) {
+				landCount = 0;
+				SendMessage ("OnLandDamege", 12.5f);
+			}
 		}
+		//CheckClientHierarchy ();
 	}
 
 
+	void FixedUpdate(){
+		if (isGameEnd || isDead) {
+			return;
+		}
+		// TODO find a better way to change weapon type...
+		ChangeWeaponType ();
+
+		if (!isLocalPlayer) {return;}
+
+		// Camera relative  direction to move.
+		camForward = Vector3.Scale (cameraRoot.forward, new Vector3 (1, 0, 1)).normalized;
+		move = (vz * camForward + vx * cameraRoot.right).normalized;
+
+		float adjSpeed = speed/10;
+		//BroadcastMessage ("RotateToForward", new Vector3 (vx, 0, vz));
+		BroadcastMessage ("RotateToForward",new PlayerRotator(move, adjSpeed));
+
+		if (CrossPlatformInputManager.GetButtonDown ("Jump") && onSea) {
+			//playerPos.z += CrossPlatformInputManager.GetAxis ("Jump");
+			vy = CrossPlatformInputManager.GetAxisRaw ("Jump")*jumpSpeed;
+			rigidBody.velocity += new Vector3 (0, vy, 0);
+		}  else {
+			vy = 0;
+		}
+		if (rigidBody.velocity.magnitude < speed) {
+			if (speed <= 10) {
+				//rigidBody.velocity += new Vector3 (vx, 0, vz).normalized;
+				rigidBody.velocity += move;
+			}else {
+			//	rigidBody.velocity += new Vector3 (vx, 0 , vz).normalized * (speed/10);
+				rigidBody.velocity += move * adjSpeed;
+			}
+		}
+	}
 
 
 	#region UI related region
@@ -465,8 +525,8 @@ public class Player : NetworkBehaviour {
 		}
 	}
 		
-	[ClientRpc]
-	public void RpcOnUnitRespawn (){
+	//[ClientRpc]
+	public void OnUnitRespawn (){
 		if (hasAuthority) {
 			Vector3 position = transform.position;
 			transform.localPosition = Vector3.zero;
@@ -477,14 +537,21 @@ public class Player : NetworkBehaviour {
 			SendMessage ("OnRespawnHealth");
 			playerStash.CmdSpawnTreasureLoot (position);
 			// Reset player state
-			speed = 10;
-			armor = 0;
-//			weaponType = WeaponType.CannonOG;
-//			CmdSetWeaponType ();
-			weaponName = "CannonOG";
+			CmdOnUnitResapwn ();
+		}
+	}
+
+	void CmdOnUnitResapwn ()
+	{
+		speed = 10;
+		armor = 0;
+		//			weaponType = WeaponType.CannonOG;
+		weaponName = "CannonOG";
+		if (uiPlayer) {
 			InitializeUI ();
 		}
 	}
+
 
 	[Command]
 	void CmdIsPlayerDead (bool dead){
@@ -495,6 +562,26 @@ public class Player : NetworkBehaviour {
 		return isLocalPlayer;
 	}
 
+	void OnCollisionStay (Collision obj){
+		GameObject target = obj.gameObject;
+		if (target.tag == "Sea") {
+			onSea = true;
+			landCount = 0;
+		}
+		if (target.tag == "Land") {
+			onLand = true;
+		}
+	}
+
+	void OnCollisionExit(Collision obj){
+		GameObject target = obj.gameObject;
+		if (target.tag == "Sea") {
+			onSea = false;
+		}
+		if (target.tag == "Land") {
+			onLand = false;
+		}
+	}
 
 }
 

@@ -5,21 +5,33 @@ using UnityEngine.UI;
 
 
 public class UIPlayer : MonoBehaviour {
-
+	
+	public bool isDebugMode = false;
+	public GameObject  miniMap, playerIndicatorPrefab , enemyIndicatorPrefab;
+	public MyNetworkManager networkManager;
 	public Player player;
 	public PlayerBase playerBase;
 	//public Health health;
-
+	public float MaxSpeed, MaxArmor;
 	public Text treasureInBase, treasurePlayerCarried, playerText, playerSpeed, playerArmor;
 	public Slider healthBar;
 	public Image weaponIcon;
 	public Sprite[] weaponIcons;
+	public Player[] players, enemys;
+	public int playerCount;
+	public GameObject[] enemyIndicators;
+	public RectTransform PIRectTrans;
+
+	private GameObject playerIndicator;
+	private Rect mapRect;
 
 	// Call from player Rpc instantiate. faster than Start
 
 	public void LinkUIToPlayer(Player playerOnClient, PlayerBase playerBaseOnClient){
 		player = playerOnClient;
 		playerBase = playerBaseOnClient;
+		MaxSpeed = player.MaxSpeed;
+		MaxArmor = player.MaxArmor;
 //		if (player) {
 //			UIUpdatePlayerPowerUp ("Speed");
 //			UIUpdatePlayerPowerUp ("Armor");
@@ -56,21 +68,69 @@ public class UIPlayer : MonoBehaviour {
 		}
 		healthBar = GetComponentInChildren<Slider> ();
 		//playerText.text = player.name;
+		//miniMap = GetComponentInChildren<RawImage>().rectTransform.rect;
+		playerIndicator = Instantiate(playerIndicatorPrefab,miniMap.transform.position,Quaternion.identity);
+		playerIndicator.transform.SetParent (miniMap.transform);
+		PIRectTrans = playerIndicator.GetComponent<RectTransform> ();
+		mapRect = miniMap.GetComponent<RectTransform> ().rect;
 
+		networkManager = GameObject.FindObjectOfType<MyNetworkManager> ();
+
+		// Refresh checking every second.
+		InvokeRepeating ("CheckEnemyIndicator",1,2);
 	}
-		
+
+	void CheckEnemyIndicator (){
+		// Recatch player if player count changes.
+		players = GameObject.FindObjectsOfType<Player> ();
+		if (playerCount != players.Length) {
+			foreach (var item in enemyIndicators) {
+				Destroy(item);
+			}
+			players = GameObject.FindObjectsOfType<Player> ();
+			playerCount = players.Length;
+			int k = 0;
+			enemys = new Player[players.Length - 1];
+			enemyIndicators = new GameObject[players.Length - 1];
+			for (int i = 0; i < players.Length; i++) {
+				if (players[i] != player) {
+					enemys [k] = players [i];
+					k++;
+				}
+			}
+			// refresh enemy indicator position.
+			for (int i = 0; i < enemys.Length; i++) {
+				enemyIndicators[i] = Instantiate(enemyIndicatorPrefab, miniMap.transform.position,Quaternion.identity);
+				enemyIndicators[i].transform.SetParent (miniMap.transform);
+			}
+		}
+	}
 
 	void Update (){
-
 		// Destroy UI if player doesn't exist.
 		if (!player) {
 			SelfDestruct ();
 		}
 
+		if (isDebugMode) {
+			networkManager.NMHud.showGUI = false;
+		}
+
+		#region MiniMap update
+		if (player) {
+			PIRectTrans.anchoredPosition = new Vector2 (player.transform.position.x / 1000 * mapRect.width/2, player.transform.position.z / 1000 * mapRect.height/2);
+		}
+		for (int i = 0; i < enemys.Length; i++) {
+			enemyIndicators [i].GetComponent<RectTransform> ().anchoredPosition = new Vector2 (enemys [i].transform.position.x / 1000 * mapRect.width / 2, enemys [i].transform.position.z / 1000 * mapRect.height / 2);
+		}
+		#endregion
+
 		// Rename if the name is not right
 		if (player && playerText.text != player.name) {
 			playerText.text = player.name;
 		}
+
+		//Debug.Log (player.transform.position + ", width = " +mapRect.width+", height = "+ mapRect.height + ", " + PIRectTrans.anchoredPosition);
 	}
 
 	public void UIUpdateTreasure(float treasureStoraged, float treasureCarried){
@@ -95,9 +155,19 @@ public class UIPlayer : MonoBehaviour {
 
 	public void UIUpdatePlayerPowerUp (string type, float parameter){
 		if (type == "Speed") {
-			playerSpeed.text = parameter.ToString();
+			if (parameter < MaxSpeed) {
+				playerSpeed.text = parameter.ToString ();
+			} else {
+				playerSpeed.text = "Max";
+			}
+
+
 		}else if (type == "Armor") {
-			playerArmor.text = parameter.ToString ();
+			if (parameter < MaxArmor) {
+				playerArmor.text = parameter.ToString ();
+			}else{
+				playerArmor.text = "Max";
+			}
 		}
 		//Debug.Log ("type = " + type + ", parameter = "+ parameter);
 	}

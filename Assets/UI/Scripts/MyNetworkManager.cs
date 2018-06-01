@@ -2,13 +2,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.Networking.NetworkSystem;
 
 public class MyNetworkManager : NetworkManager {
 
 	public int count = 0;
+	public NetworkManagerHUD NMHud;
 
 	// Use this for initialization
 	void Start () {
+		NMHud = GetComponent<NetworkManagerHUD> ();
 	}
 
 	void Update(){
@@ -16,7 +19,7 @@ public class MyNetworkManager : NetworkManager {
 //			
 //		}
 	}
-
+		
 	public void MyStartHost(){
 		Debug.Log (Time.timeSinceLevelLoad + ", Starting Host...");
 		StartHost ();

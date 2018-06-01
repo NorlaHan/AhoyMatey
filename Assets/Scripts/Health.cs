@@ -10,7 +10,7 @@ public class Health : NetworkBehaviour {
 
 	public GameObject lastAttacker;
 	public float fullHealth = 100f, armor= 0f, shield = 0f ;
-	public bool destroyOnDeath = false;
+	public bool isDebugMode = false, destroyOnDeath = false;
 
 	[SyncVar /* (hook = "OnChangeHealth")*/ ]	// Whenever current health  changed, call OnChangeHealth method.
 	public float currentHealth;
@@ -38,18 +38,36 @@ public class Health : NetworkBehaviour {
 		currentHealth = fullHealth;
 	}
 
+	[Command]
+	void CmdHealOverTime (float heal) {
+		if (isDebugMode && currentHealth < fullHealth) {
+			currentHealth =Mathf.Clamp ((currentHealth += Time.deltaTime * heal),0,fullHealth);
+			OnChangeHealth (currentHealth);
+		}
+	}
+
 	// Update is called once per frame
 	void Update () {
-		
+		if (isDebugMode) {
+			CmdHealOverTime (100);
+		}
 	}
-		
+
+	void OnLandDamege (float evDamage){
+		OnTakeDamage (evDamage, null);
+	}
+
 	public void OnTakeDamage (float damage, GameObject theAttacker){
 		// Only server handle the health.
 		//if (!isServer) {return;}
 		if (!hasAuthority) {return;}
 		armor = player.armor;
 		lastAttacker = theAttacker;
-		currentHealth -= Mathf.Clamp((damage-armor),1, 9999);
+		if (!lastAttacker) {
+			currentHealth -= damage;
+		} else {
+			currentHealth -= Mathf.Clamp ((damage * ((10 - armor) / 10)), 1, 9999);
+		}
 		OnChangeHealth (currentHealth);
 		if (currentHealth <= 0) {
 			if (type == UnitType.Player) {

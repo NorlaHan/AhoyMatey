@@ -7,6 +7,7 @@ public class PlayerTreasureStash : NetworkBehaviour {
 
 	public bool isDebugMode = false;
 	public GameObject treasureLootPrefab;
+	public GameObject[] powerUpLootPrefabs;
 
 	[SyncVar(hook = "OnChangeTreasureCarry")]
 	public float playerTreasureCarry;
@@ -16,6 +17,7 @@ public class PlayerTreasureStash : NetworkBehaviour {
 
 	public float lootPenalty = 4f, startTreasure = 0, pillage = 20f;
 
+	private Transform playerLoots;
 	private Vector3 deathPosition;
 	private float treasureForLoot;
 
@@ -31,6 +33,13 @@ public class PlayerTreasureStash : NetworkBehaviour {
 		// Start with 100 treasure.
 		playerTreasureCarry = startTreasure;
 		player = GetComponent<Player> ().gameObject;
+		if (GameObject.Find ("PlayerLoots")) {
+			playerLoots = GameObject.Find ("PlayerLoots").transform;
+		} else {
+			Debug.LogWarning (name + ", missing PlayerLoots. Auto generate.");
+			playerLoots = new GameObject ("PlayerLoots").transform;
+		}
+
 	}
 	
 	// Update is called once per frame
@@ -65,6 +74,12 @@ public class PlayerTreasureStash : NetworkBehaviour {
 
 	void DelaySpawnLoot (){
 		// Don't spawn treasure if there're nothing to loot.
+
+		int i = Random.Range (0, powerUpLootPrefabs.Length);
+		GameObject PU = Instantiate (powerUpLootPrefabs[i],deathPosition, Quaternion.identity);
+		NetworkServer.Spawn (PU);
+		PU.transform.SetParent (playerLoots);
+
 		if (treasureForLoot<=0) {
 			Debug.Log (name + ", treasureForLoot = " + treasureForLoot);
 			return;
@@ -72,6 +87,7 @@ public class PlayerTreasureStash : NetworkBehaviour {
 		GameObject treasureLoot = Instantiate (treasureLootPrefab, deathPosition, Quaternion.identity);
 		NetworkServer.Spawn (treasureLoot);
 		treasureLoot.GetComponent<Treasure>().TreasureLootFromPlayer(treasureForLoot  , player );
+		treasureLoot.transform.SetParent (playerLoots);
 		Debug.Log ("CmdSpawnTreasureLoot ()");
 		//RpcSpawnTreasureLoot (treasureLoot, deathPosition);
 	}

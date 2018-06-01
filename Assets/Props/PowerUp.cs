@@ -26,9 +26,10 @@ public class PowerUp : NetworkBehaviour {
 	//private Player PlayerBeenLooted;
 
 	void Start () {
-		if (isServer && !isLoot) {
-			PowerUp.powerUpCount++;
-			if (!isServer) {return;}
+		if (isServer) {
+			if (!isLoot) {
+				PowerUp.powerUpCount++;
+			}
 		if (type == PowerUpType.Armor) {
 				ServerRollArmorAmount ();
 			}else if (type == PowerUpType.Speed) {
@@ -112,7 +113,7 @@ public class PowerUp : NetworkBehaviour {
 						PowerUp.powerUpCount--;
 						Debug.Log (name + ", PowerUp.powerUpCount--");
 					}
-					Destroy (gameObject, 1);
+					Destroy (gameObject, 0.5f);
 				}
 			}
 		}
