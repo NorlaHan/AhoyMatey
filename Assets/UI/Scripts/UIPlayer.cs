@@ -2,12 +2,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityStandardAssets.CrossPlatformInput;
 
 
 public class UIPlayer : MonoBehaviour {
 	
 	public bool isDebugMode = false;
-	public GameObject  miniMap, playerIndicatorPrefab , enemyIndicatorPrefab;
+	public GameObject miniMap, menu;
+	public GameObject playerIndicatorPrefab , enemyIndicatorPrefab;
+
 	public MyNetworkManager networkManager;
 	public Player player;
 	public PlayerBase playerBase;
@@ -76,6 +79,9 @@ public class UIPlayer : MonoBehaviour {
 
 		networkManager = GameObject.FindObjectOfType<MyNetworkManager> ();
 
+		menu.SetActive (false);
+		networkManager.NMHud.showGUI = false;
+		miniMap.SetActive(false);
 		// Refresh checking every second.
 		InvokeRepeating ("CheckEnemyIndicator",1,2);
 	}
@@ -113,15 +119,27 @@ public class UIPlayer : MonoBehaviour {
 		}
 
 		if (isDebugMode) {
-			networkManager.NMHud.showGUI = false;
+		}
+
+		if (CrossPlatformInputManager.GetButtonDown("Cancel")) {
+			OnToggleMenu ();
+		}
+
+		if (CrossPlatformInputManager.GetButtonDown("MapToggle")) {
+			ToggleMiniMap ();
 		}
 
 		#region MiniMap update
-		if (player) {
-			PIRectTrans.anchoredPosition = new Vector2 (player.transform.position.x / 1000 * mapRect.width/2, player.transform.position.z / 1000 * mapRect.height/2);
-		}
-		for (int i = 0; i < enemys.Length; i++) {
-			enemyIndicators [i].GetComponent<RectTransform> ().anchoredPosition = new Vector2 (enemys [i].transform.position.x / 1000 * mapRect.width / 2, enemys [i].transform.position.z / 1000 * mapRect.height / 2);
+		// Only update when the miniMap is showen.
+		if (miniMap.activeSelf) {
+			if (player) {
+				PIRectTrans.anchoredPosition = new Vector2 (player.transform.position.x / 1000 * mapRect.width/2, player.transform.position.z / 1000 * mapRect.height/2);
+				//Debug.Log("Update player indicator");
+			}
+			for (int i = 0; i < enemys.Length; i++) {
+				enemyIndicators [i].GetComponent<RectTransform> ().anchoredPosition = new Vector2 (enemys [i].transform.position.x / 1000 * mapRect.width / 2, enemys [i].transform.position.z / 1000 * mapRect.height / 2);
+				//Debug.Log("Update enemies indicator");
+			}
 		}
 		#endregion
 
@@ -131,6 +149,36 @@ public class UIPlayer : MonoBehaviour {
 		}
 
 		//Debug.Log (player.transform.position + ", width = " +mapRect.width+", height = "+ mapRect.height + ", " + PIRectTrans.anchoredPosition);
+	}
+
+	public void OnPlayerExitGame(){
+		Application.Quit ();
+	}
+
+	public void OnToggleMenu ()
+	{
+		if (menu.activeSelf) {
+			menu.SetActive (false);
+		}
+		else {
+			menu.SetActive (true);
+		}
+	}
+
+	public void ToggleNetworkManagerHUD (){
+		if (networkManager.NMHud.showGUI) {
+			networkManager.NMHud.showGUI = false;
+		} else {
+			networkManager.NMHud.showGUI = true;
+		}
+	}
+
+	public void ToggleMiniMap (){
+		if (miniMap.activeSelf) {
+			miniMap.SetActive(false);
+		} else {
+			miniMap.SetActive(true);
+		}
 	}
 
 	public void UIUpdateTreasure(float treasureStoraged, float treasureCarried){

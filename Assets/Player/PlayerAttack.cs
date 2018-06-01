@@ -15,7 +15,7 @@ public class PlayerAttack : MonoBehaviour {
 	public SpawnPointIndicator[] spawnPos;
 
 	private Transform playerProjectiles;
-	private Player playerSelf;
+	private Player playerSelf, playerEnemy;
 	private float  fireRate,fireCount = 0;
 	private Vector3 fireVector;
 	private BoxCollider boxCollider;
@@ -105,8 +105,10 @@ public class PlayerAttack : MonoBehaviour {
 	void OnTriggerStay(Collider obj){
 			//Debug.Log ("something trigger, " + obj.name);
 		GameObject target = obj.gameObject;
-		Player player = obj.GetComponentInParent<Player> ();
-		if (!playerSelf.isDead && target.tag == "Player" && !player.isDead) {
+		if (obj.GetComponentInParent<Player> ()) {
+			playerEnemy = obj.GetComponentInParent<Player> ();
+		}
+		if (!playerSelf.isDead && target.tag == "Player" && !playerEnemy.isDead) {
 			
 			GameObject FiredCannon;
 

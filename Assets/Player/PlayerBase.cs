@@ -14,6 +14,8 @@ public class PlayerBase : NetworkBehaviour {
 	[SyncVar]
 	public GameObject player;
 
+	public BaseDefence baseDefence;
+
 	//public string playerName;
 
 
@@ -102,6 +104,7 @@ public class PlayerBase : NetworkBehaviour {
 	public void BaseLinkToPlayer (GameObject playerOnClient){
 		isActivated = true;
 		player = playerOnClient;
+		baseDefence.player = playerOnClient;
 	}
 
 

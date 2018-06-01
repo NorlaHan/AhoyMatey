@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 
 public class GameManager : NetworkBehaviour {
 
@@ -27,7 +28,7 @@ public class GameManager : NetworkBehaviour {
 	}
 
 	public void EndingSync (){
-	
+
 	}
 
 	public void OnPlayerGameSettle (GameObject playerWinner){
