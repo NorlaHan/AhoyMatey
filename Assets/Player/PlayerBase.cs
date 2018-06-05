@@ -14,7 +14,8 @@ public class PlayerBase : NetworkBehaviour {
 	[SyncVar]
 	public GameObject player;
 
-	public BaseDefence baseDefence;
+	[SyncVar]
+	public GameObject baseDefence;
 
 	//public string playerName;
 
@@ -29,6 +30,39 @@ public class PlayerBase : NetworkBehaviour {
 			OnBaseTreasureStorageChange (treasureStorage);
 		}
 	}
+
+	public void BaseLinkToPlayer (GameObject playerOnClient){
+		isActivated = true;
+		player = playerOnClient;
+		baseDefence.GetComponent<BaseDefence>().player = playerOnClient;
+		player.GetComponent<Player> ().LinkBaseDefenceToPlayer (baseDefence);
+	}
+
+	void OnBaseTreasureStorageChange (float treasure){
+
+		if (player) {
+			//if (!hasAuthority) {return;}
+			player.GetComponent<Player> ().ReceiveBaseTreasureStorageChange (treasure);
+			Debug.Log (name + ", TreasureStorageChange, call " + player.name);
+		} else {
+			if (isActivated) {
+				Debug.Log ("TryToFindPlayerToStoreageChange");
+				//if player doesn't exist, try again 0.2 sec later. 
+				Invoke ("TryToFindPlayerToStoreageChange", 0.2f);
+			}
+		}
+	}
+
+	// if still not exist, trigger by adding 0.
+	void TryToFindPlayerToStoreageChange (){
+		if (player) {
+			//if (!hasAuthority) {return;}
+			player.GetComponent<Player> ().ReceiveBaseTreasureStorageChange (treasureStorage);
+		} else {
+			treasureStorage += 0;
+		}
+	}
+
 
 	// Use this for initialization
 	void Start () {
@@ -100,40 +134,5 @@ public class PlayerBase : NetworkBehaviour {
 			treasureStorage = 0;
 		}
 	}
-
-	public void BaseLinkToPlayer (GameObject playerOnClient){
-		isActivated = true;
-		player = playerOnClient;
-		baseDefence.player = playerOnClient;
-	}
-
-
-	void OnBaseTreasureStorageChange (float treasure){
-		//if (!isServer) {return;}
-//		if (!player) {
-//			Debug.Log (name + ", no player assigned ,find player");
-//			player = GameObject.Find ("playerName");
-//		}
-		if (player) {
-			//if (!hasAuthority) {return;}
-			player.GetComponent<Player> ().ReceiveBaseTreasureStorageChange (treasure);
-			Debug.Log (name + ", TreasureStorageChange, call " + player.name);
-		} else {
-			if (isActivated) {
-				Debug.Log ("TryToFindPlayerToStoreageChange");
-				//if player doesn't exist, try again 0.2 sec later. 
-				Invoke ("TryToFindPlayerToStoreageChange", 0.2f);
-			}
-		}
-	}
-
-	// if still not exist, trigger by adding 0.
-	void TryToFindPlayerToStoreageChange (){
-		if (player) {
-			//if (!hasAuthority) {return;}
-			player.GetComponent<Player> ().ReceiveBaseTreasureStorageChange (treasureStorage);
-		} else {
-			treasureStorage += 0;
-		}
-	}
+		
 }

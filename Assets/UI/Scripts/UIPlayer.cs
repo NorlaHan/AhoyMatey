@@ -17,7 +17,7 @@ public class UIPlayer : MonoBehaviour {
 	//public Health health;
 	public float MaxSpeed, MaxArmor;
 	public Text treasureInBase, treasurePlayerCarried, playerText, playerSpeed, playerArmor;
-	public Slider healthBar;
+	public Slider healthBar, baseDefenceHealthBar;
 	public Image weaponIcon;
 	public Sprite[] weaponIcons;
 	public Player[] players, enemys;
@@ -69,6 +69,15 @@ public class UIPlayer : MonoBehaviour {
 				weaponIcon = item;
 			}
 		}
+		Slider[] bars = GetComponentsInChildren<Slider> ();
+		foreach (Slider item in bars) {
+			if (item.name == "HealthBar") {
+				healthBar = item;
+			}else if (item.name == "BDHealthBar") {
+				baseDefenceHealthBar = item;
+			}
+		}
+
 		healthBar = GetComponentInChildren<Slider> ();
 		//playerText.text = player.name;
 		//miniMap = GetComponentInChildren<RawImage>().rectTransform.rect;
@@ -191,6 +200,10 @@ public class UIPlayer : MonoBehaviour {
 		healthBar.value = playerHealthPercentage;
 	}
 
+	public void UIUpadteBaseDefenceHealth(float baseDefenceHealthPercentage){
+		baseDefenceHealthBar.value = baseDefenceHealthPercentage;
+	}
+
 	public void UIUpdatePlayerWeapon (string weaponType ){
 		if (weaponType == "CannonOG") {
 			weaponIcon.sprite = weaponIcons [0];
@@ -229,4 +242,7 @@ public class UIPlayer : MonoBehaviour {
 		Debug.Log (playerName + " can call " + name);
 	}
 
+	public void OnRepairButtonPressed (){
+		//player.
+	}
 }

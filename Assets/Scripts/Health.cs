@@ -5,17 +5,18 @@ using UnityEngine.Networking;
 
 public class Health : NetworkBehaviour {
 
-	public enum UnitType {Player, Mob, Boss};
+	public enum UnitType {Player, Mob, Boss, Base};
 	public UnitType type;
 
 	public GameObject lastAttacker;
-	public float fullHealth = 100f, armor= 0f, shield = 0f ;
+	public float fullHealth = 100f, armor= 0f, shield = 0f, recovery = 0f ;
 	public bool isDebugMode = false, destroyOnDeath = false;
 
 	[SyncVar /* (hook = "OnChangeHealth")*/ ]	// Whenever current health  changed, call OnChangeHealth method.
 	public float currentHealth;
 
 	private Player player;
+	private BaseDefence baseDefence;
 
 	// Use this for initialization
 	void Start () {
@@ -24,11 +25,15 @@ public class Health : NetworkBehaviour {
 			if (GetComponent<Player> ()) {
 				player = GetComponent<Player> ();
 			} else {Debug.LogWarning (name + ", missing Player");}
+		}else if (type == UnitType.Base) {
+			OnChangeHealth (currentHealth);
+			if (GetComponent<BaseDefence>()) {
+				baseDefence = GetComponent<BaseDefence> ();
+			}else {Debug.LogWarning (name + ", missing BaseDefence");}
+		}
 
-			if (isServer) {
-				CmdFullHealth ();
-			}
-
+		if (isServer) {
+			CmdFullHealth ();
 		}
 		// Add other types of units.
 	}
@@ -40,7 +45,7 @@ public class Health : NetworkBehaviour {
 
 	[Command]
 	void CmdHealOverTime (float heal) {
-		if (isDebugMode && currentHealth < fullHealth) {
+		if (currentHealth < fullHealth) {
 			currentHealth =Mathf.Clamp ((currentHealth += Time.deltaTime * heal),0,fullHealth);
 			OnChangeHealth (currentHealth);
 		}
@@ -51,6 +56,10 @@ public class Health : NetworkBehaviour {
 		if (isDebugMode) {
 			CmdHealOverTime (100);
 		}
+		if (type == UnitType.Base) {
+			CmdHealOverTime (recovery);
+		}
+
 	}
 
 	void OnLandDamege (float evDamage){
@@ -61,14 +70,19 @@ public class Health : NetworkBehaviour {
 		// Only server handle the health.
 		//if (!isServer) {return;}
 		if (!hasAuthority) {return;}
-		armor = player.armor;
+		if (type == UnitType.Player) {
+			armor = player.armor;
+		}else if (type == UnitType.Base) {
+			armor = baseDefence.armor;
+		}
+
 		lastAttacker = theAttacker;
 		if (!lastAttacker) {
 			currentHealth -= damage;
 		} else {
 			currentHealth -= Mathf.Clamp ((damage * ((10 - armor) / 10)), 1, 9999);
 		}
-		OnChangeHealth (currentHealth);
+			OnChangeHealth (currentHealth);
 		if (currentHealth <= 0) {
 			if (type == UnitType.Player) {
 				if (destroyOnDeath) {
@@ -80,11 +94,18 @@ public class Health : NetworkBehaviour {
 				// Take the treasure automatically.
 				//			float lootedTreasure = treasureStash.TreasureBeenLooted ();
 				//			lastAttacker.GetComponentInChildren<PlayerTreasureStash> ().TreasureLoot (lootedTreasure);
+			}else if (type == UnitType.Base) {
+				//Debug.Log (name + ", is destroyed.");
 			}
 			// Add other types of units.
 
 			// Treasure loot spawn at spot;
-			SendMessage ("RpcOnUnitDeath");
+			if (type == UnitType.Player) {
+				SendMessage ("RpcOnUnitDeath");
+			}else if (type == UnitType.Base) {
+				SendMessage ("OnBaseDestroy");
+			}
+
 		}
 	}
 
@@ -103,7 +124,12 @@ public class Health : NetworkBehaviour {
 
 	// Hook to currentHealth.
 	public void OnChangeHealth(float crtHealth){
-		SendMessage ("UpdatePlayerHealth", crtHealth / fullHealth);
+		if (type == UnitType.Player) {
+			SendMessage ("UpdatePlayerHealth", crtHealth / fullHealth);
+		}else if (type == UnitType.Base) {
+			SendMessage ("UpdateBaseDefenceHealth", crtHealth / fullHealth);
+		}
+
 		//Debug.Log (name + ", OnChangeHealth");
 	}
 

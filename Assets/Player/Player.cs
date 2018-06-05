@@ -18,16 +18,16 @@ public class Player : NetworkBehaviour {
 	[SyncVar]
 	public float speed = 10f;
 
+	[SyncVar]
+	public GameObject playerBase, baseDefence;
+
+	[SyncVar]
+	public string playerName, parentName, playerBaseName, weaponName;
+
 	public GameObject playerUIPrefab , playerFoam; 
 	public PlayerAttack[] playerAttacks;
 	public PlayerTreasureStash playerStash;
 	public GameManager gameManager;
-
-	[SyncVar]
-	public GameObject playerBase;
-
-	[SyncVar]
-	public string playerName, parentName, playerBaseName, weaponName;
 
 	public enum WeaponType {CannonOG, ScatterGun, SuperCannon};
 
@@ -128,6 +128,10 @@ public class Player : NetworkBehaviour {
 		}
 	}
 
+	public void LinkBaseDefenceToPlayer (GameObject baseDefenceOnClient){
+		baseDefence = baseDefenceOnClient;
+		BroadcastMessage ("LinkBaseDefenceToAttack",baseDefence);
+	}
 	#endregion
 
 
@@ -282,10 +286,12 @@ public class Player : NetworkBehaviour {
 		}else if (weaponType == WeaponType.SuperCannon) {
 			weaponName = weaponType.ToString ();
 		}
-		if (isServer) {
-			RpcSetWeaponType (weaponName);
-		}
-	//ChangeWeaponType ();
+//		if (isServer) {
+//			RpcSetWeaponType (weaponName);
+//
+//			ChangeWeaponType ();
+//		}
+	ChangeWeaponType ();
 	}
 
 	[ClientRpc]
@@ -300,7 +306,8 @@ public class Player : NetworkBehaviour {
 	// This action has to be done on every player 
 	void ChangeWeaponType (){
 		//if (weaponName == "CannonOG") {
-			if (weaponName == playerAttacks[0].weaponName) {
+		if (weaponName == playerAttacks[0].weaponName && weaponName == playerAttacks[1].weaponName) {
+			//Debug.Log ("Noneed to change weapon");
 				return;
 			}
 			foreach (PlayerAttack item in playerAttacks) {
@@ -489,6 +496,13 @@ public class Player : NetworkBehaviour {
 		if (uiPlayer) {
 			uiPlayer.UIUpdatePlayerHealth (playerHealthPercentage);
 			//Debug.Log ("UpdatePlayerHealth = " + playerHealthPercentage);
+		}
+	}
+
+	[Client]
+	public void UpdateBaseDefenceHealth (float baseDefenceHealthPercentage){
+		if (uiPlayer) {
+			uiPlayer.UIUpadteBaseDefenceHealth (baseDefenceHealthPercentage);
 		}
 	}
 

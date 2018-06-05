@@ -5,7 +5,7 @@ using UnityEngine.Networking;
 
 public class CannonBall : NetworkBehaviour {
 
-	public enum WeaponType {CannonOG, ScatterGun}
+	public enum WeaponType {CannonOG, ScatterGun, SuperCannon}
 	public WeaponType type;
 
 	public float ballSpeed = 40f, lifeTime = 4f;
@@ -43,18 +43,30 @@ public class CannonBall : NetworkBehaviour {
 //		if (!isServer) {
 //			return;
 //		}
-		if (type == WeaponType.CannonOG) {
-			GameObject Fx = Instantiate (hitFX, transform.position, Quaternion.identity);
-			Fx.transform.SetParent (playerProjectiles);
-		}else if (type == WeaponType.ScatterGun) {
-			GameObject Fx = Instantiate (hitFX, transform.position, Quaternion.identity);
-			Fx.transform.SetParent (playerProjectiles);
-		}
+//		if (type == WeaponType.CannonOG) {
+//			GameObject Fx = Instantiate (hitFX, transform.position, Quaternion.identity);
+//			Fx.transform.SetParent (playerProjectiles);
+//		}else if (type == WeaponType.ScatterGun) {
+//			GameObject Fx = Instantiate (hitFX, transform.position, Quaternion.identity);
+//			Fx.transform.SetParent (playerProjectiles);
+//		}else if (type == WeaponType.SuperCannon) {
+//			GameObject Fx = Instantiate (hitFX, transform.position, Quaternion.identity);
+//			Fx.transform.SetParent (playerProjectiles);
+//		}
+		GameObject Fx = Instantiate (hitFX, transform.position, Quaternion.identity);
+		Fx.transform.SetParent (playerProjectiles);
+
 		GameObject target = obj.gameObject;
-		if (target.tag == "Player") {
-			target.GetComponent<Health> ().OnTakeDamage (ballDamage,attacker);
+//		if (target.tag == "Player") {
+//			target.GetComponent<Health> ().OnTakeDamage (ballDamage,attacker);
+//		}else if (target.GetComponent<Health>()) {
+//			
+//		}
+
+		if (target.GetComponentInParent <Health> ()) {
+			target.GetComponentInParent <Health> ().OnTakeDamage (ballDamage,attacker);
 		}
-		Destroy (gameObject,0.1f);
+		Destroy (gameObject,0.01f);
 	}
 
 //	public void SetAttacker(GameObject theAttacker){

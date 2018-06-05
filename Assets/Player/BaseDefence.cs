@@ -8,7 +8,13 @@ public class BaseDefence : NetworkBehaviour {
 	[SyncVar]
 	public GameObject playerBase, player;
 
-	public GameObject currentTarget, turret, BaseCannonPrefab;
+	[SyncVar]
+	public float armor = 0;
+
+	[SyncVar]
+	public bool isDead = false;
+
+	public GameObject currentTarget, turret, BaseCannonPrefab, FxPrefab;
 	public Transform spawnPos;
 
 	private Transform playerProjectiles;
@@ -33,10 +39,15 @@ public class BaseDefence : NetworkBehaviour {
 	}
 
 	void OnTriggerStay (Collider obj){
+		//Debug.Log ("trigger!!!");
 		GameObject target = obj.gameObject;
-		if (obj.GetComponentInParent<Player> ()) {
+		if (!isDead && obj.GetComponentInParent<Player> () && obj.GetComponentInParent<Player> ().gameObject != player) {
 			playerEnemy = obj.GetComponentInParent<Player> ();
-		} else {return;}
+			//Debug.Log ("target lock, attack " + playerEnemy.name);
+		}else {
+			//Debug.Log ("player in range, return");
+			return;
+		} //else {return;}
 		if (target.tag == "Player" && !playerEnemy.isDead) {
 			// Clear current target when target dead. 
 			if (playerEnemy.isDead) {
@@ -53,12 +64,10 @@ public class BaseDefence : NetworkBehaviour {
 		
 			if (fireCount >= fireRate) {
 				fireCount = 0;
-				if (player) {
-					GameObject FiredCannon = Instantiate (BaseCannonPrefab, spawnPos.position, Quaternion.identity);
-					NetworkServer.Spawn (FiredCannon);
-					//FiredCannon.transform.SetParent (playerProjectiles.transform);
-					FiredCannon.GetComponent<CannonBall> ().CannonFire (player, playerProjectiles, fireVector);
-				}
+				GameObject FiredCannon = Instantiate (BaseCannonPrefab, spawnPos.position, Quaternion.identity);
+				//NetworkServer.Spawn (FiredCannon);
+				FiredCannon.transform.SetParent (playerProjectiles.transform);
+				FiredCannon.GetComponent<CannonBall> ().CannonFire (player, playerProjectiles, fireVector);
 			}
 		}
 	}
@@ -70,4 +79,16 @@ public class BaseDefence : NetworkBehaviour {
 		}
 	}
 
+	void OnBaseDestroy(){
+		isDead = true;
+		GameObject Fx = Instantiate (FxPrefab, transform.position, Quaternion.identity);
+		Fx.transform.SetParent (transform);
+		Debug.Log (name + ", is destroyed, "+ player.name + " lose.");
+	}
+
+	void UpdateBaseDefenceHealth (float bDPercentage){
+		if (player) {
+			player.GetComponent<Player> ().UpdateBaseDefenceHealth (bDPercentage);
+		}
+	}
 }

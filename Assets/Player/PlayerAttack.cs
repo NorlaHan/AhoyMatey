@@ -14,8 +14,10 @@ public class PlayerAttack : MonoBehaviour {
 	public float cannonOGRate = 2f, scatterGunRate = 1.8f, superCannonGunRate = 2.2f;
 	public SpawnPointIndicator[] spawnPos;
 
+	public BaseDefence baseDefenceSelf, baseDefenceEnemy;
+	public Player playerSelf, playerEnemy;
+
 	private Transform playerProjectiles;
-	private Player playerSelf, playerEnemy;
 	private float  fireRate,fireCount = 0;
 	private Vector3 fireVector;
 	private BoxCollider boxCollider;
@@ -48,6 +50,10 @@ public class PlayerAttack : MonoBehaviour {
 
 		OnWeaponChange ();
 	
+	}
+
+	public void LinkBaseDefenceToAttack (GameObject baseDefenceOnClient){
+		baseDefenceSelf = baseDefenceOnClient.GetComponent<BaseDefence> ();
 	}
 
 	public void OnWeaponChange (){
@@ -107,13 +113,22 @@ public class PlayerAttack : MonoBehaviour {
 		GameObject target = obj.gameObject;
 		if (obj.GetComponentInParent<Player> ()) {
 			playerEnemy = obj.GetComponentInParent<Player> ();
+		} else if (target.tag == "BaseDefence" && obj.GetComponentInParent<BaseDefence> () != baseDefenceSelf) {
+			baseDefenceEnemy = obj.GetComponentInParent <BaseDefence> ();
+		} else {
+			return;
 		}
-		if (!playerSelf.isDead && target.tag == "Player" && !playerEnemy.isDead) {
+		if (!playerSelf.isDead && ((target.tag == "Player" && !playerEnemy.isDead) || (baseDefenceEnemy && !baseDefenceEnemy.isDead)) ) {
 			
 			GameObject FiredCannon;
 
 			if (currentTarget == null) {
-				currentTarget = target;
+				if (playerEnemy) {
+					currentTarget = playerEnemy.gameObject;
+				}else if (baseDefenceEnemy) {
+					currentTarget = baseDefenceEnemy.gameObject;
+				}
+
 			}
 				
 			//Debug.Log (name + ", Target in sight, fire !!");
@@ -174,8 +189,12 @@ public class PlayerAttack : MonoBehaviour {
 	}
 
 	void OnTriggerExit (Collider obj){
-		GameObject target = obj.gameObject;
-		if (currentTarget == target) {
+		//GameObject target = obj.gameObject;
+		if (playerEnemy && obj.GetComponentInParent<Player>() == playerEnemy) {
+			playerEnemy = null;
+			currentTarget = null;
+		}else if (baseDefenceEnemy && obj.GetComponentInParent<BaseDefence>() == baseDefenceEnemy) {
+			baseDefenceEnemy = null;
 			currentTarget = null;
 		}
 	}
