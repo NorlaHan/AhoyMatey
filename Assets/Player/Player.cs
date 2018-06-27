@@ -526,6 +526,20 @@ public class Player : NetworkBehaviour {
 		}
 	}
 
+
+	public void OnRepairButtonPressed (){
+		if (hasAuthority) {
+			//playerBase.GetComponent<PlayerBase>().BaseOnRepairButtonPressed ();
+			CmdOnRepairButtonPressed ();
+			Debug.Log ("OnRepairButtonPressed");
+		}
+	}
+
+	[Command]
+	void CmdOnRepairButtonPressed (){
+		playerBase.GetComponent<PlayerBase>().BaseOnRepairButtonPressed ();
+	}
+
 	#endregion
 
 	[ClientRpc]

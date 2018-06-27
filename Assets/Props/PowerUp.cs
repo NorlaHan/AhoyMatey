@@ -35,8 +35,7 @@ public class PowerUp : NetworkBehaviour {
 			}else if (type == PowerUpType.Speed) {
 				ServerRollSpeedAmount ();
 			}
-
-//			parentName = transform.parent.name;
+			parentName = transform.parent.name;
 		}
 
 	}
@@ -76,9 +75,10 @@ public class PowerUp : NetworkBehaviour {
 			Debug.Log (name +",type="+ type + ", isClient = " + isClient+", isServer = "+ isServer +", powerUpAmount = " + powerUpAmount);
 			isDebugMode = false;
 		}
-//		if (!transform.parent && !isLoot) {
-//			transform.SetParent (GameObject.Find(parentName).transform);
-//		}
+
+		if (!transform.parent && !isLoot) {
+			transform.SetParent (GameObject.Find(parentName).transform);
+		}
 		//CheckRepairOnClient ();
 	}
 

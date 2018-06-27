@@ -14,12 +14,13 @@ public class BaseDefence : NetworkBehaviour {
 	[SyncVar]
 	public bool isDead = false;
 
-	public GameObject currentTarget, turret, BaseCannonPrefab, FxPrefab;
+	public GameObject currentTarget, turret, BaseCannonPrefab /*, FxPrefab*/ ;
 	public Transform spawnPos;
+	public GameObject Fx;
+	public Player playerEnemy;
 
 	private Transform playerProjectiles;
 	private float  fireRate = 2f,fireCount = 0;
-	private Player playerEnemy;
 
 	// Use this for initialization
 	void Start () {
@@ -29,6 +30,7 @@ public class BaseDefence : NetworkBehaviour {
 			Debug.LogWarning (name + ", missing PlayerProjectiles. Auto generate.");
 			playerProjectiles = new GameObject ("playerProjectiles").transform;
 		}
+		Fx.SetActive (false);
 	}
 	
 	// Update is called once per frame
@@ -79,16 +81,62 @@ public class BaseDefence : NetworkBehaviour {
 		}
 	}
 
-	void OnBaseDestroy(){
+
+	void OnBaseDefenceDestroy (){
+		if (!hasAuthority) {
+			return;
+		}
 		isDead = true;
-		GameObject Fx = Instantiate (FxPrefab, transform.position, Quaternion.identity);
-		Fx.transform.SetParent (transform);
-		Debug.Log (name + ", is destroyed, "+ player.name + " lose.");
+		Fx.SetActive (true);
+		RpcOnBaseDefenceDestroy ();
+		//Fx = Instantiate (FxPrefab, transform.position, Quaternion.Euler(-90,0,0) );
+		//NetworkServer.Spawn (Fx);
+		//Fx.transform.SetParent (transform);
+
+		//Debug.Log (name + ", is destroyed, "+ player.name + " lose.");
 	}
 
-	void UpdateBaseDefenceHealth (float bDPercentage){
+	[ClientRpc]
+	void RpcOnBaseDefenceDestroy (){
+		Fx.SetActive (true);
+	}
+
+	//[ClientRpc]
+	void OnBaseDefenceRespawn (){
+		if (Fx) {
+			Debug.Log ("OnBaseDefenceRespawn ()");
+			Fx.SetActive (false);
+			RpcOnBaseDefenceRespawn ();
+			//Destroy (Fx);
+			isDead = false;
+		}
+	}
+
+	[ClientRpc]
+	void RpcOnBaseDefenceRespawn (){
+		if (Fx) {
+			Fx.SetActive (false);
+		}
+	}
+
+	[Command]
+	void CmdUpdateBaseDefenceHealth (float bDPercentage){
+		if (player) {
+			player.GetComponent<Player> ().UpdateBaseDefenceHealth (bDPercentage);
+			if (isServer) {
+				RpcUpdateBaseDefenceHealth (bDPercentage);
+			}
+		}
+	}
+
+	[ClientRpc]
+	void RpcUpdateBaseDefenceHealth (float bDPercentage){
 		if (player) {
 			player.GetComponent<Player> ().UpdateBaseDefenceHealth (bDPercentage);
 		}
+	}
+
+	public void BaseDefenceOnRepairButtonPressed (){
+		
 	}
 }

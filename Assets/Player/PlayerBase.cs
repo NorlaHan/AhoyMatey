@@ -27,7 +27,7 @@ public class PlayerBase : NetworkBehaviour {
 	{
 		base.OnStartClient ();
 		if (treasureStorage != 0) {
-			OnBaseTreasureStorageChange (treasureStorage);
+
 		}
 	}
 
@@ -36,6 +36,15 @@ public class PlayerBase : NetworkBehaviour {
 		player = playerOnClient;
 		baseDefence.GetComponent<BaseDefence>().player = playerOnClient;
 		player.GetComponent<Player> ().LinkBaseDefenceToPlayer (baseDefence);
+		if (treasureStorage != 0) {
+			
+			Invoke ("PokeBaseTreasureStorageChange" ,1f);
+		}
+	}
+
+	void PokeBaseTreasureStorageChange(){
+		treasureStorage += 0;
+		Debug.Log ("Poke treasureStorage");
 	}
 
 	void OnBaseTreasureStorageChange (float treasure){
@@ -66,13 +75,14 @@ public class PlayerBase : NetworkBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		
+
 	}
 	
 	// Update is called once per frame
 	void Update () {
 		if (isDebugMode) {
 			treasureStorage += 1;
+			OnBaseTreasureStorageChange (treasureStorage);
 		}
 	}
 
@@ -81,8 +91,9 @@ public class PlayerBase : NetworkBehaviour {
 		//Debug.Log (name + ", trigger.");
 		if (obj.tag == "PlayerStash") {
 			if (player && obj.GetComponentInParent<Player>().gameObject == player) {
+				treasureStorage += 0;
 				treasureStorage += obj.GetComponentInParent<PlayerTreasureStash> ().TreasureStoreToBase ();
-				//Debug.Log (target.name + "Player back to base, storage is now : " + treasureStorage);
+				Debug.Log (player.name + "Player back to base, storage is now : " + treasureStorage);
 				if (treasureStorage >= player.GetComponent<Player>().treasureToWin) {
 					Debug.Log (obj.GetComponentInParent<Player>().name + " Win!");
 					//player.GetComponent<Player>().OnGameSettle ();
@@ -134,5 +145,20 @@ public class PlayerBase : NetworkBehaviour {
 			treasureStorage = 0;
 		}
 	}
-		
+
+	//[Command]
+	public void BaseOnRepairButtonPressed (){
+		Health bDHealth = baseDefence.GetComponent<Health> ();
+		float lostHealth = bDHealth.LostHealth ();
+		Debug.Log ("lostHealth = " + lostHealth);
+		if (lostHealth < treasureStorage) {
+			bDHealth.OnGetRepair (lostHealth);
+			treasureStorage = Mathf.Floor(treasureStorage -= lostHealth);
+		} else {
+			bDHealth.OnGetRepair (treasureStorage);
+			treasureStorage = 0;
+		}
+		//baseDefence.GetComponent<BaseDefence> ();
+		Debug.Log ("BaseOnRepairButtonPressed");
+	}
 }

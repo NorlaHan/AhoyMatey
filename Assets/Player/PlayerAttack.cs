@@ -110,15 +110,17 @@ public class PlayerAttack : MonoBehaviour {
 
 	void OnTriggerStay(Collider obj){
 			//Debug.Log ("something trigger, " + obj.name);
+
 		GameObject target = obj.gameObject;
-		if (obj.GetComponentInParent<Player> ()) {
+		if (target.tag == "Player" && !obj.GetComponentInParent<Player> ().isDead) {
 			playerEnemy = obj.GetComponentInParent<Player> ();
-		} else if (target.tag == "BaseDefence" && obj.GetComponentInParent<BaseDefence> () != baseDefenceSelf) {
+		} else if (target.tag == "BaseDefence" && obj.GetComponentInParent<BaseDefence> () != baseDefenceSelf && !obj.GetComponentInParent<BaseDefence> ().isDead) {
 			baseDefenceEnemy = obj.GetComponentInParent <BaseDefence> ();
 		} else {
 			return;
 		}
-		if (!playerSelf.isDead && ((target.tag == "Player" && !playerEnemy.isDead) || (baseDefenceEnemy && !baseDefenceEnemy.isDead)) ) {
+
+		if (!playerSelf.isDead && (( playerEnemy /*target.tag == "Player"*/ && !playerEnemy.isDead) || (baseDefenceEnemy && !baseDefenceEnemy.isDead)) ) {
 			
 			GameObject FiredCannon;
 

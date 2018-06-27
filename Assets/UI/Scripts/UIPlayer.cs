@@ -8,7 +8,7 @@ using UnityStandardAssets.CrossPlatformInput;
 public class UIPlayer : MonoBehaviour {
 	
 	public bool isDebugMode = false;
-	public GameObject miniMap, menu;
+	public GameObject miniMap, menu, repairConfirm;
 	public GameObject playerIndicatorPrefab , enemyIndicatorPrefab;
 
 	public MyNetworkManager networkManager;
@@ -91,6 +91,7 @@ public class UIPlayer : MonoBehaviour {
 		menu.SetActive (false);
 		networkManager.NMHud.showGUI = false;
 		miniMap.SetActive(false);
+		repairConfirm.SetActive (false);
 		// Refresh checking every second.
 		InvokeRepeating ("CheckEnemyIndicator",1,2);
 	}
@@ -242,7 +243,20 @@ public class UIPlayer : MonoBehaviour {
 		Debug.Log (playerName + " can call " + name);
 	}
 
-	public void OnRepairButtonPressed (){
-		//player.
+	public void UIOnRepairButtonPressed (){
+		if (!repairConfirm.activeSelf) {
+			repairConfirm.SetActive (true);
+		} else {
+			repairConfirm.SetActive (false);
+		}
+	}
+
+	public void UIOnConfirmRepairAgree () {
+		player.OnRepairButtonPressed ();
+		repairConfirm.SetActive (false);
+	}
+
+	public void UIOnConfirmRepairCancel (){
+		repairConfirm.SetActive (false);
 	}
 }
