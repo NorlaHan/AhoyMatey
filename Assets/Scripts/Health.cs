@@ -9,7 +9,7 @@ public class Health : NetworkBehaviour {
 	public UnitType type;
 
 	public GameObject lastAttacker;
-	public float fullHealth = 100f, armor= 0f, shield = 0f, recovery = 0f ;
+	public float fullHealth = 100f, armor= 0f, shield = 0f, recovery = 0f , aggroCount = 0;
 	public bool isDebugMode = false, destroyOnDeath = false;
 
 	[SyncVar /* (hook = "OnChangeHealth")*/]	// Whenever current health  changed, call OnChangeHealth method.
@@ -61,6 +61,15 @@ public class Health : NetworkBehaviour {
 			}
 		}
 
+		if (lastAttacker) {
+			aggroCount += Time.deltaTime;
+			if (aggroCount > 5) {
+				aggroCount = 0;
+				lastAttacker = null;
+			}
+		}
+
+
 	}
 
 	void OnLandDamege (float evDamage){
@@ -78,31 +87,39 @@ public class Health : NetworkBehaviour {
 			}
 
 			lastAttacker = theAttacker;
+
 			if (!lastAttacker) {
+				lastAttacker = null;
 				currentHealth -= damage;
 			} else {
+				aggroCount = 0;
 				currentHealth -= Mathf.Clamp ((damage * ((10 - armor) / 10)), 1, 9999);
 			}
 			OnChangeHealth (currentHealth);
 			if (currentHealth <= 0) {
-				if (type == UnitType.Player) {
-					if (destroyOnDeath) {
-						Destroy (gameObject);
-					} else {
-						Debug.LogWarning (name + ", is dead.");
-					}
-					//PlayerTreasureStash treasureStash =  GetComponentInChildren<PlayerTreasureStash> ();
-					// Take the treasure automatically.
-					//			float lootedTreasure = treasureStash.TreasureBeenLooted ();
-					//			lastAttacker.GetComponentInChildren<PlayerTreasureStash> ().TreasureLoot (lootedTreasure);
-				} else if (type == UnitType.Base) {
-					//Debug.Log (name + ", is destroyed.");
-				}
+//				if (type == UnitType.Player) {
+//					if (destroyOnDeath) {
+//						Destroy (gameObject);
+//					} else {
+//						Debug.LogWarning (name + ", is dead.");
+//					}
+//					//PlayerTreasureStash treasureStash =  GetComponentInChildren<PlayerTreasureStash> ();
+//					// Take the treasure automatically.
+//					//			float lootedTreasure = treasureStash.TreasureBeenLooted ();
+//					//			lastAttacker.GetComponentInChildren<PlayerTreasureStash> ().TreasureLoot (lootedTreasure);
+//				} else if (type == UnitType.Base) {
+//					//Debug.Log (name + ", is destroyed.");
+//				}
 				// Add other types of units.
 
 				// Treasure loot spawn at spot;
 				if (type == UnitType.Player) {
-					SendMessage ("RpcOnUnitDeath");
+					if (lastAttacker) {
+						SendMessage ("RpcOnUnitDeath", lastAttacker);
+					} else {
+						SendMessage ("RpcOnUnitSuicide");
+					}
+
 				} else if (type == UnitType.Base) {
 					SendMessage ("OnBaseDefenceDestroy");
 				}

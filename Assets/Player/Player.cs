@@ -19,7 +19,7 @@ public class Player : NetworkBehaviour {
 	public float speed = 10f;
 
 	[SyncVar]
-	public GameObject playerBase, baseDefence;
+	public GameObject playerBase, baseDefence, lastAttacker;
 
 	[SyncVar]
 	public string playerName, parentName, playerBaseName, weaponName;
@@ -543,13 +543,26 @@ public class Player : NetworkBehaviour {
 	#endregion
 
 	[ClientRpc]
-	void RpcOnUnitDeath (){
+	void RpcOnUnitDeath (GameObject attacker){
 		if (hasAuthority) {
+			lastAttacker = attacker;
 			CmdIsPlayerDead (true);
 			playerFoam.SetActive (false);
 			if (!animator) {animator = GetComponent<Animator> ();}
 			animator.SetBool ("isDead", true);
 			Debug.Log ("Player is dead.");
+		}
+	}
+
+	[ClientRpc]
+	void RpcOnUnitSuicide (){
+		if (hasAuthority) {
+			lastAttacker = null;
+			CmdIsPlayerDead (true);
+			playerFoam.SetActive (false);
+			if (!animator) {animator = GetComponent<Animator> ();}
+			animator.SetBool ("isDead", true);
+			Debug.Log ("Player suicide.");
 		}
 	}
 		
@@ -563,7 +576,15 @@ public class Player : NetworkBehaviour {
 			playerFoam.SetActive (true);
 			CmdIsPlayerDead (false);
 			SendMessage ("OnRespawnHealth");
-			playerStash.CmdSpawnTreasureLoot (position);
+
+			// prevent suicide to get loot
+			if (lastAttacker) {
+				playerStash.CmdSpawnTreasureLoot (position);
+				lastAttacker = null;
+			} else {
+				playerStash.CmdSpawnNoLoot (position);
+			}
+
 			// Reset player state
 			CmdOnUnitResapwn ();
 		}

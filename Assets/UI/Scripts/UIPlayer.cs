@@ -8,7 +8,7 @@ using UnityStandardAssets.CrossPlatformInput;
 public class UIPlayer : MonoBehaviour {
 	
 	public bool isDebugMode = false;
-	public GameObject miniMap, menu, repairConfirm;
+	public GameObject miniMap, menu, repairConfirm, startMenu, startMenuCamera, helpPanel;
 	public GameObject playerIndicatorPrefab , enemyIndicatorPrefab;
 
 	public MyNetworkManager networkManager;
@@ -43,7 +43,7 @@ public class UIPlayer : MonoBehaviour {
 
 	void Awake (){
 		transform.SetParent (GameObject.Find("UICanvas").GetComponent<Transform>());
-		GetComponent<RectTransform> ().anchoredPosition3D = new Vector3 (0, 490, 0);
+		GetComponent<RectTransform> ().anchoredPosition3D = new Vector3 (0, 0, 0);
 		GetComponent<RectTransform> ().localScale = new Vector3 (1, 1, 1);
 	}
 
@@ -79,6 +79,11 @@ public class UIPlayer : MonoBehaviour {
 		}
 
 		healthBar = GetComponentInChildren<Slider> ();
+		if (!startMenu) {
+			startMenu = GameObject.Find("StartMenu");
+		}
+
+		startMenuCamera = GameObject.Find("StartMenuCamera");
 		//playerText.text = player.name;
 		//miniMap = GetComponentInChildren<RawImage>().rectTransform.rect;
 		playerIndicator = Instantiate(playerIndicatorPrefab,miniMap.transform.position,Quaternion.identity);
@@ -88,6 +93,8 @@ public class UIPlayer : MonoBehaviour {
 
 		networkManager = GameObject.FindObjectOfType<MyNetworkManager> ();
 
+		startMenu.SetActive (false);
+		//startMenuCamera.SetActive (false);
 		menu.SetActive (false);
 		networkManager.NMHud.showGUI = false;
 		miniMap.SetActive(false);
@@ -136,7 +143,11 @@ public class UIPlayer : MonoBehaviour {
 		}
 
 		if (CrossPlatformInputManager.GetButtonDown("MapToggle")) {
-			ToggleMiniMap ();
+			OnToggleMiniMap ();
+		}
+
+		if (CrossPlatformInputManager.GetButtonDown("Help")) {
+			OnToggleHelp ();
 		}
 
 		#region MiniMap update
@@ -175,7 +186,7 @@ public class UIPlayer : MonoBehaviour {
 		}
 	}
 
-	public void ToggleNetworkManagerHUD (){
+	public void OnToggleNetworkManagerHUD (){
 		if (networkManager.NMHud.showGUI) {
 			networkManager.NMHud.showGUI = false;
 		} else {
@@ -183,11 +194,19 @@ public class UIPlayer : MonoBehaviour {
 		}
 	}
 
-	public void ToggleMiniMap (){
+	public void OnToggleMiniMap (){
 		if (miniMap.activeSelf) {
 			miniMap.SetActive(false);
 		} else {
 			miniMap.SetActive(true);
+		}
+	}
+
+	public void OnToggleHelp () {
+		if (helpPanel.activeSelf) {
+			helpPanel.SetActive (false);
+		} else {
+			helpPanel.SetActive (true);
 		}
 	}
 

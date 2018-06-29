@@ -73,13 +73,12 @@ public class PlayerTreasureStash : NetworkBehaviour {
 	}
 
 	void DelaySpawnLoot (){
-		// Don't spawn treasure if there're nothing to loot.
-
 		int i = Random.Range (0, powerUpLootPrefabs.Length);
 		GameObject PU = Instantiate (powerUpLootPrefabs[i],deathPosition, Quaternion.identity);
 		NetworkServer.Spawn (PU);
 		PU.transform.SetParent (playerLoots);
 
+		// Don't spawn treasure if there're nothing to loot.
 		if (treasureForLoot<=0) {
 			Debug.Log (name + ", treasureForLoot = " + treasureForLoot);
 			return;
@@ -91,6 +90,26 @@ public class PlayerTreasureStash : NetworkBehaviour {
 		Debug.Log ("CmdSpawnTreasureLoot ()");
 		//RpcSpawnTreasureLoot (treasureLoot, deathPosition);
 	}
+
+	[Command]
+	public void CmdSpawnNoLoot ( Vector3 position){	// But still Spawn gold if carried.
+		treasureForLoot = TreasureBeenLooted ();
+		deathPosition = position;
+		Invoke ("DelaySpawnNoPU", 0.5f);
+	}
+
+	void DelaySpawnNoPU (){
+		if (treasureForLoot<=0) {
+			Debug.Log (name + ", treasureForLoot = " + treasureForLoot);
+			return;
+		}
+		GameObject treasureLoot = Instantiate (treasureLootPrefab, deathPosition, Quaternion.identity);
+		NetworkServer.Spawn (treasureLoot);
+		treasureLoot.GetComponent<Treasure>().TreasureLootFromPlayer(treasureForLoot  , player );
+		treasureLoot.transform.SetParent (playerLoots);
+		Debug.Log ("CmdSpawnTreasureLoot ()");
+	}
+
 
 	[ClientRpc]
 	void RpcSpawnTreasureLoot (GameObject treasureLoot , Vector3 position) {
