@@ -12,15 +12,26 @@ public class CannonBall : NetworkBehaviour {
 	public float ballDamage = 20f;
 	public GameObject attacker, hitFX;
 	public Vector3 upVelocity = new Vector3 (0f, 6.5f, 0f);
+    public AudioClip fireClip; //, explodeClipe;
 
 	private Transform playerProjectiles;
 	private Rigidbody rigidBody;
+    private AudioSource audioSource;
 	//private float lifeCount = 0f;
 
 	// Use this for initialization
 	void Start () {
 		rigidBody = GetComponent<Rigidbody> ();
-	}
+        if (GetComponent<AudioSource>())
+        {
+            audioSource = GetComponent<AudioSource>();
+        }
+        else {
+            Debug.LogWarning(name + ", missing AudioSource");
+        }
+        
+
+    }
 	
 	// Update is called once per frame
 	void Update () {
@@ -32,7 +43,7 @@ public class CannonBall : NetworkBehaviour {
 	}
 
 	public void CannonFire (GameObject theAttacker,Transform parent, Vector3 fireVector) {
-		attacker = theAttacker;
+        attacker = theAttacker;
 		playerProjectiles = parent;
 		rigidBody = GetComponent<Rigidbody> ();
 		rigidBody.velocity = (fireVector * ballSpeed) + upVelocity;
@@ -55,8 +66,9 @@ public class CannonBall : NetworkBehaviour {
 //		}
 		GameObject Fx = Instantiate (hitFX, transform.position, Quaternion.identity);
 		Fx.transform.SetParent (playerProjectiles);
+        //OnAudioPlay(explodeClipe);
 
-		GameObject target = obj.gameObject;
+        GameObject target = obj.gameObject;
 //		if (target.tag == "Player") {
 //			target.GetComponent<Health> ().OnTakeDamage (ballDamage,attacker);
 //		}else if (target.GetComponent<Health>()) {
@@ -68,6 +80,11 @@ public class CannonBall : NetworkBehaviour {
 		}
 		Destroy (gameObject,0.01f);
 	}
+
+    void OnAudioPlay(AudioClip a) {
+        audioSource.clip = a;
+        audioSource.Play();
+    }
 
 //	public void SetAttacker(GameObject theAttacker){
 //		attacker = theAttacker;

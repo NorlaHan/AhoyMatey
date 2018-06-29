@@ -38,7 +38,7 @@ public class PlayerBase : NetworkBehaviour {
 		player.GetComponent<Player> ().LinkBaseDefenceToPlayer (baseDefence);
 		if (treasureStorage != 0) {
 			
-			Invoke ("PokeBaseTreasureStorageChange" ,1f);
+			Invoke ("PokeBaseTreasureStorageChange" ,3f);
 		}
 	}
 

@@ -4,7 +4,8 @@ using UnityEngine;
 
 public class MusicManager : MonoBehaviour {
 
-	public AudioClip[] audioClips;
+    public AudioClip startMenuClip, endingClip;
+	public AudioClip[] sceneClips;
 	public int index = 0;
 
 	AudioSource audioSource;
@@ -12,32 +13,28 @@ public class MusicManager : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		audioSource = GetComponent<AudioSource> ();
-		ChangeAndPlay (index);
+		ChangeAndPlay (startMenuClip);
 	}
 
-	public void StartSceneBGM (){
-		if (index == 0) {
-			index = 1;
-		}else if (index == 1) {
-			index = 2;
-		}else if (index == 2) {
-			index = 1;
-		}	
-		ChangeAndPlay (index);
-		Invoke ("StartSceneBGM", audioClips [index].length);
-	}
+	public void OnStartSceneBGM (){
+        Debug.Log("Starting sceneClips["+ index + "].");
+		ChangeAndPlay (sceneClips[index]);
+        Invoke("OnStartSceneBGM", sceneClips[index].length);
+        if (index < sceneClips.Length - 1){
+            index++;
+        }
+        else { index = 0; }
+        Debug.Log("Next Clips is sceneClips[" + index + "].");
+    }
 
 	public void OnGameSettle () {
 		CancelInvoke ();
-		index = 3;
-		audioSource.clip = audioClips [index];
-		audioSource.Play ();
-
+        ChangeAndPlay(endingClip);
 	}
 
-	void ChangeAndPlay (int input)
+	void ChangeAndPlay (AudioClip clip)
 	{
-		audioSource.clip = audioClips [input];
+		audioSource.clip = clip;
 		audioSource.Play ();
 	}
 

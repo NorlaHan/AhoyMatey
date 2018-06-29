@@ -8,7 +8,8 @@ using UnityStandardAssets.CrossPlatformInput;
 public class UIPlayer : MonoBehaviour {
 	
 	public bool isDebugMode = false;
-	public GameObject miniMap, menu, repairConfirm, startMenu, startMenuCamera, helpPanel;
+    public MusicManager musicManager;
+    public GameObject miniMap, menu, repairConfirm, startMenu, startMenuCamera, helpPanel;
 	public GameObject playerIndicatorPrefab , enemyIndicatorPrefab;
 
 	public MyNetworkManager networkManager;
@@ -49,6 +50,11 @@ public class UIPlayer : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+
+
+        if (!musicManager) {
+            musicManager = GameObject.FindObjectOfType<MusicManager>();
+        }
 		Text[] texts = GetComponentsInChildren<Text> ();
 		foreach (Text item in texts) {
 			if (item.name == "TreasureInBase") {
@@ -101,7 +107,10 @@ public class UIPlayer : MonoBehaviour {
 		repairConfirm.SetActive (false);
 		// Refresh checking every second.
 		InvokeRepeating ("CheckEnemyIndicator",1,2);
-	}
+
+        // Music
+        musicManager.OnStartSceneBGM();
+    }
 
 	void CheckEnemyIndicator (){
 		// Recatch player if player count changes.

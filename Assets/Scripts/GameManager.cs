@@ -6,7 +6,8 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : NetworkBehaviour {
 
-	public GameObject uiEnding;
+	public GameObject uiStartMenu, uiEnding;
+    public MusicManager musicManager;
 	public bool isDebugMod = false;
 
 	[SyncVar]
@@ -14,7 +15,11 @@ public class GameManager : NetworkBehaviour {
 
 	// Use this for initialization
 	void Start () {
+        // uiStartMenu.SetActive(true);
 		uiEnding.SetActive (false);
+        if (!musicManager) {
+            musicManager = GameObject.FindObjectOfType<MusicManager>();
+        }
 	}
 	
 	// Update is called once per frame
@@ -32,7 +37,8 @@ public class GameManager : NetworkBehaviour {
 	}
 
 	public void OnPlayerGameSettle (GameObject playerWinner){
-		uiEnding.SetActive (true);
+        musicManager.OnGameSettle();
+        uiEnding.SetActive (true);
 		//uiEnding.GetComponent<UIEnding> ().playerWinName = playerWinName;
 		uiEnding.GetComponent<UIEnding> ().GameResult (playerWinner);
 		Debug.Log (name + ", OnPlayerGameSettle");
