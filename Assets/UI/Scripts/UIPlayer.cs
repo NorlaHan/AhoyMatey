@@ -11,6 +11,8 @@ public class UIPlayer : MonoBehaviour {
     public MusicManager musicManager;
     public GameObject miniMap, menu, repairConfirm, startMenu, startMenuCamera, helpPanel;
 	public GameObject playerIndicatorPrefab , enemyIndicatorPrefab;
+	public GameObject[] playerBaseIndicators;
+	public PlayerSpawnPoint[] playerSpawnPoints = new PlayerSpawnPoint[4];
 
 	public MyNetworkManager networkManager;
 	public Player player;
@@ -28,6 +30,8 @@ public class UIPlayer : MonoBehaviour {
 
 	private GameObject playerIndicator;
 	private Rect mapRect;
+
+	UnityEngine.Networking.NetworkManagerHUDSRCFontSize NMHudSRCFontSize;
 
 	// Call from player Rpc instantiate. faster than Start
 
@@ -102,14 +106,40 @@ public class UIPlayer : MonoBehaviour {
 		startMenu.SetActive (false);
 		//startMenuCamera.SetActive (false);
 		menu.SetActive (false);
-		networkManager.NMHud.showGUI = false;
+		//networkManager.NMHud.showGUI = false;
+
+
+		NMHudSRCFontSize = GameObject.FindObjectOfType<UnityEngine.Networking.NetworkManagerHUDSRCFontSize> ();
+		NMHudSRCFontSize.showGUI = false;
+		//networkManager.gameObject.GetComponent<NetworkManagerHUDSRCFontSize>().showGUI = false;
+
 		miniMap.SetActive(false);
 		repairConfirm.SetActive (false);
+
 		// Refresh checking every second.
 		InvokeRepeating ("CheckEnemyIndicator",1,2);
 
         // Music
         musicManager.OnStartSceneBGM();
+
+		PlayerSpawnPoint[] SPArray = GameObject.FindObjectsOfType<PlayerSpawnPoint> ();
+		foreach (var item in SPArray) {
+			if (item.name == "SpawnPoint1") {
+				playerSpawnPoints [0] = item;
+			}else if (item.name == "SpawnPoint2") {
+				playerSpawnPoints [1] = item;
+			}else if (item.name == "SpawnPoint3") {
+				playerSpawnPoints [2] = item;
+			}else if (item.name == "SpawnPoint4") {
+				playerSpawnPoints [3] = item;
+			}
+		}
+
+		for (int i = 0; i < playerSpawnPoints.Length; i++) {
+			playerBaseIndicators [i].GetComponent<RectTransform> ().anchoredPosition = new Vector2 (playerSpawnPoints [i].transform.position.x / 500 * mapRect.width / 2, playerSpawnPoints [i].transform.position.z / 500 * mapRect.height / 2);
+				
+		}
+
     }
 
 	void CheckEnemyIndicator (){
@@ -163,11 +193,11 @@ public class UIPlayer : MonoBehaviour {
 		// Only update when the miniMap is showen.
 		if (miniMap.activeSelf) {
 			if (player) {
-				PIRectTrans.anchoredPosition = new Vector2 (player.transform.position.x / 1000 * mapRect.width/2, player.transform.position.z / 1000 * mapRect.height/2);
+				PIRectTrans.anchoredPosition = new Vector2 (player.transform.position.x / 500 * mapRect.width/2, player.transform.position.z / 500 * mapRect.height/2);
 				//Debug.Log("Update player indicator");
 			}
 			for (int i = 0; i < enemys.Length; i++) {
-				enemyIndicators [i].GetComponent<RectTransform> ().anchoredPosition = new Vector2 (enemys [i].transform.position.x / 1000 * mapRect.width / 2, enemys [i].transform.position.z / 1000 * mapRect.height / 2);
+				enemyIndicators [i].GetComponent<RectTransform> ().anchoredPosition = new Vector2 (enemys [i].transform.position.x / 500 * mapRect.width / 2, enemys [i].transform.position.z / 500 * mapRect.height / 2);
 				//Debug.Log("Update enemies indicator");
 			}
 		}
@@ -196,10 +226,15 @@ public class UIPlayer : MonoBehaviour {
 	}
 
 	public void OnToggleNetworkManagerHUD (){
-		if (networkManager.NMHud.showGUI) {
-			networkManager.NMHud.showGUI = false;
+//		if (networkManager.NMHud.showGUI) {
+//			networkManager.NMHud.showGUI = false;
+//		} else {
+//			networkManager.NMHud.showGUI = true;
+//		}
+		if (NMHudSRCFontSize.showGUI) {
+			NMHudSRCFontSize.showGUI = false;
 		} else {
-			networkManager.NMHud.showGUI = true;
+			NMHudSRCFontSize.showGUI = true;
 		}
 	}
 

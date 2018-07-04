@@ -12,6 +12,7 @@ public class MyNetworkManager : NetworkManager {
 	// Use this for initialization
 	void Start () {
 		NMHud = GetComponent<NetworkManagerHUD> ();
+		//GetComponent<NetworkManagerHUDSRCFontSize> ().OnGUI ();
 	}
 
 	void Update(){
