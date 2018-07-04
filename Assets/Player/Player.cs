@@ -590,6 +590,7 @@ public class Player : NetworkBehaviour {
 		}
 	}
 
+	[Command]
 	void CmdOnUnitResapwn ()
 	{
 		speed = 10;

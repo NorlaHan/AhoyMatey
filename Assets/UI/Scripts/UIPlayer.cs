@@ -12,7 +12,8 @@ public class UIPlayer : MonoBehaviour {
     public GameObject miniMap, menu, repairConfirm, startMenu, startMenuCamera, helpPanel;
 	public GameObject playerIndicatorPrefab , enemyIndicatorPrefab;
 	public GameObject[] playerBaseIndicators;
-	public PlayerSpawnPoint[] playerSpawnPoints = new PlayerSpawnPoint[4];
+	//public PlayerSpawnPoint[] playerSpawnPoints = new PlayerSpawnPoint[4];
+	public PlayerBase[] playerBases = new PlayerBase[4];
 
 	public MyNetworkManager networkManager;
 	public Player player;
@@ -40,6 +41,33 @@ public class UIPlayer : MonoBehaviour {
 		playerBase = playerBaseOnClient;
 		MaxSpeed = player.MaxSpeed;
 		MaxArmor = player.MaxArmor;
+
+		playerBases = GameObject.FindObjectsOfType<PlayerBase> (); 
+		for (int i = 0; i < playerBases.Length; i++) {
+			Vector3 pbPos = playerBases [i].transform.position;
+			Vector2 pbRecPos;
+			pbRecPos = new Vector2 (pbPos.x / 500 * mapRect.width / 2, pbPos.z / 500 * mapRect.height / 2);
+			playerBaseIndicators [i].GetComponent<RectTransform> ().anchoredPosition = pbRecPos;
+			//Debug.Log ("pbPos is : " + pbPos);
+			if (playerBases [i] == playerBase) {
+				playerBaseIndicators [i].GetComponent<Image> ().color = Color.green;
+				if (player.name == "Player1") {
+					playerBaseIndicators [i].GetComponentInChildren<Text> ().text = "1";
+				}else if (player.name == "Player2") {
+					playerBaseIndicators [i].GetComponentInChildren<Text> ().text = "2";
+				}else if (player.name == "Player3") {
+					playerBaseIndicators [i].GetComponentInChildren<Text> ().text = "3";
+				}else if (player.name == "Player4") {
+					playerBaseIndicators [i].GetComponentInChildren<Text> ().text = "4";
+				}
+				//Debug.Log ("my base : " + pbRecPos);
+			} else {
+				playerBaseIndicators [i].GetComponent<Image> ().color = Color.red;
+				playerBaseIndicators [i].GetComponentInChildren<Text> ().text = "X";
+				//Debug.Log ("enemy base : "+ pbRecPos);
+			}
+
+		}
 //		if (player) {
 //			UIUpdatePlayerPowerUp ("Speed");
 //			UIUpdatePlayerPowerUp ("Armor");
@@ -50,6 +78,7 @@ public class UIPlayer : MonoBehaviour {
 		transform.SetParent (GameObject.Find("UICanvas").GetComponent<Transform>());
 		GetComponent<RectTransform> ().anchoredPosition3D = new Vector3 (0, 0, 0);
 		GetComponent<RectTransform> ().localScale = new Vector3 (1, 1, 1);
+		mapRect = miniMap.GetComponent<RectTransform> ().rect;
 	}
 
 	// Use this for initialization
@@ -99,7 +128,7 @@ public class UIPlayer : MonoBehaviour {
 		playerIndicator = Instantiate(playerIndicatorPrefab,miniMap.transform.position,Quaternion.identity);
 		playerIndicator.transform.SetParent (miniMap.transform);
 		PIRectTrans = playerIndicator.GetComponent<RectTransform> ();
-		mapRect = miniMap.GetComponent<RectTransform> ().rect;
+
 
 		networkManager = GameObject.FindObjectOfType<MyNetworkManager> ();
 
@@ -122,23 +151,22 @@ public class UIPlayer : MonoBehaviour {
         // Music
         musicManager.OnStartSceneBGM();
 
-		PlayerSpawnPoint[] SPArray = GameObject.FindObjectsOfType<PlayerSpawnPoint> ();
-		foreach (var item in SPArray) {
-			if (item.name == "SpawnPoint1") {
-				playerSpawnPoints [0] = item;
-			}else if (item.name == "SpawnPoint2") {
-				playerSpawnPoints [1] = item;
-			}else if (item.name == "SpawnPoint3") {
-				playerSpawnPoints [2] = item;
-			}else if (item.name == "SpawnPoint4") {
-				playerSpawnPoints [3] = item;
-			}
-		}
-
-		for (int i = 0; i < playerSpawnPoints.Length; i++) {
-			playerBaseIndicators [i].GetComponent<RectTransform> ().anchoredPosition = new Vector2 (playerSpawnPoints [i].transform.position.x / 500 * mapRect.width / 2, playerSpawnPoints [i].transform.position.z / 500 * mapRect.height / 2);
-				
-		}
+//		PlayerSpawnPoint[] SPArray = GameObject.FindObjectsOfType<PlayerSpawnPoint> ();
+//		foreach (var item in SPArray) {
+//			if (item.name == "SpawnPoint1") {
+//				playerSpawnPoints [0] = item;
+//			}else if (item.name == "SpawnPoint2") {
+//				playerSpawnPoints [1] = item;
+//			}else if (item.name == "SpawnPoint3") {
+//				playerSpawnPoints [2] = item;
+//			}else if (item.name == "SpawnPoint4") {
+//				playerSpawnPoints [3] = item;
+//			}
+//		}
+//
+//		for (int i = 0; i < playerSpawnPoints.Length; i++) {
+//			playerBaseIndicators [i].GetComponent<RectTransform> ().anchoredPosition = new Vector2 (playerSpawnPoints [i].transform.position.x / 500 * mapRect.width / 2, playerSpawnPoints [i].transform.position.z / 500 * mapRect.height / 2);
+//		}
 
     }
 

@@ -23,13 +23,13 @@ public class PlayerBase : NetworkBehaviour {
 	public float winTreasureAmount = 2000;
 
 
-	public override void OnStartClient ()
-	{
-		base.OnStartClient ();
-		if (treasureStorage != 0) {
-
-		}
-	}
+//	public override void OnStartClient ()
+//	{
+//		base.OnStartClient ();
+//		if (treasureStorage != 0) {
+//
+//		}
+//	}
 
 	public void BaseLinkToPlayer (GameObject playerOnClient){
 		isActivated = true;
@@ -38,12 +38,13 @@ public class PlayerBase : NetworkBehaviour {
 		player.GetComponent<Player> ().LinkBaseDefenceToPlayer (baseDefence);
 		if (treasureStorage != 0) {
 			
-			Invoke ("PokeBaseTreasureStorageChange" ,3f);
+			Invoke ("PokeBaseTreasureStorageChange" ,2f);
 		}
 	}
 
 	void PokeBaseTreasureStorageChange(){
-		treasureStorage += 0;
+		//treasureStorage += 0;
+		OnBaseTreasureStorageChange (treasureStorage);
 		Debug.Log ("Poke treasureStorage");
 	}
 

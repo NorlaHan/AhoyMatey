@@ -10,6 +10,7 @@ public class Health : NetworkBehaviour {
 
 	public GameObject lastAttacker;
 	public float fullHealth = 100f, armor= 0f, shield = 0f, recovery = 0f , aggroCount = 0;
+	public float respawnPercentage = 0.3f;
 	public bool isDebugMode = false, destroyOnDeath = false;
 
 	[SyncVar /* (hook = "OnChangeHealth")*/]	// Whenever current health  changed, call OnChangeHealth method.
@@ -42,7 +43,7 @@ public class Health : NetworkBehaviour {
 
 	void HealOverTime (float heal) {
 		if (currentHealth < fullHealth) {
-			currentHealth =Mathf.Clamp ((currentHealth += Time.deltaTime * heal),0,fullHealth);
+			currentHealth = Mathf.Clamp ((currentHealth += Time.deltaTime * heal),0,fullHealth);
 			OnChangeHealth (currentHealth);
 		}
 	}
@@ -55,7 +56,7 @@ public class Health : NetworkBehaviour {
 		if (type == UnitType.Base && hasAuthority) {
 			HealOverTime (recovery);
 			if (baseDefence.isDead) {
-				if (currentHealth/fullHealth > 0.33f) {
+				if (currentHealth/fullHealth > respawnPercentage) {
 					SendMessage ("OnBaseDefenceRespawn");
 				}
 			}
