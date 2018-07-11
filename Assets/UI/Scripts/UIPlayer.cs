@@ -59,7 +59,7 @@ public class UIPlayer : MonoBehaviour {
 					playerBaseIndicators [i].GetComponentInChildren<Text> ().text = "3";
 				}else if (player.name == "Player4") {
 					playerBaseIndicators [i].GetComponentInChildren<Text> ().text = "4";
-				}
+				};
 				//Debug.Log ("my base : " + pbRecPos);
 			} else {
 				playerBaseIndicators [i].GetComponent<Image> ().color = Color.red;
@@ -151,6 +151,9 @@ public class UIPlayer : MonoBehaviour {
         // Music
         musicManager.OnStartSceneBGM();
 
+		helpPanel.SetActive (true);
+		menu.SetActive (true);
+		miniMap.SetActive (true);
 //		PlayerSpawnPoint[] SPArray = GameObject.FindObjectsOfType<PlayerSpawnPoint> ();
 //		foreach (var item in SPArray) {
 //			if (item.name == "SpawnPoint1") {
